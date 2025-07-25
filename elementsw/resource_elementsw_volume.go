@@ -9,7 +9,7 @@ import (
 
 	"github.com/fatih/structs"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/scaleoutsean/terraform-solidfire-provider/elementsw/element/jsonrpc"
+	"github.com/scaleoutsean/terraform-provider-solidfire/elementsw/element/jsonrpc"
 )
 
 // CreateVolumeRequest the users input for creating a Volume

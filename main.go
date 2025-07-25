@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
-	"github.com/scaleoutsean/terraform-solidfire-provider/elementsw"
+	"github.com/scaleoutsean/terraform-provider-solidfire/elementsw"
 )
 
 func main() {

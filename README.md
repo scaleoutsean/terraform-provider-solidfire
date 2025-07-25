@@ -1,6 +1,6 @@
 <!-- TOC -->
 
-- [Terraform SolidFire Provider](#terraform-solidfire-provider)
+- [Terraform Provider SolidFire](#terraform-provider-solidfire)
   - [Naming Conventions](#naming-conventions)
   - [Using the Provider](#using-the-provider)
     - [Provider Documentation](#provider-documentation)
@@ -23,9 +23,9 @@
 
 <!-- /TOC -->
 
-# Terraform SolidFire Provider
+# Terraform Provider SolidFire
 
-This is the repository for the Terraform SolidFire Provider, which can be used with Terraform to configure resources on NetApp HCI or NetApp SolidFire storage clusters.
+This is the repository for the Terraform Provider (for) SolidFire, which can be used with Terraform to configure resources on NetApp HCI or NetApp SolidFire storage clusters.
 
 For general information about Terraform, visit the [official website][tf-website] and the [GitHub project page][tf-github].
 
