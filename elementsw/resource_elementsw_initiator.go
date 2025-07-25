@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/fatih/structs"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/netapp/terraform-provider-netapp-elementsw/elementsw/element/jsonrpc"
 )
 

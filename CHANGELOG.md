@@ -1,3 +1,8 @@
+## 0.2.0 (Unreleased)
+
+* **New:** Forked from Terraform NetApp ElementSW Provider (repository)
+* **New:** Updated to work with Terraform 1.5 and Terraform Plugin SDK v2.30
+
 ## 0.1.0 (Unreleased)
 
 FEATURES:

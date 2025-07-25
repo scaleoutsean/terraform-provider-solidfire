@@ -1,12 +1,11 @@
 package elementsw
 
 import (
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// Provider is the main meathod for ElementSW Terraform provider
-func Provider() terraform.ResourceProvider {
+// Provider returns the Terraform provider definition for ElementSW
+func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"username": {
