@@ -39,6 +39,7 @@ func Provider() *schema.Provider {
 			"elementsw_initiator":           resourceElementSwInitiator(),
 			"elementsw_volume":              resourceElementSwVolume(),
 			"elementsw_account":             resourceElementSwAccount(),
+			"elementsw_qos_policy":         resourceElementswQoSPolicy(),
 		},
 
 		ConfigureFunc: providerConfigure,

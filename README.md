@@ -33,7 +33,10 @@ For general information about Terraform, visit the [official website][tf-website
 [tf-github]: https://github.com/hashicorp/terraform
 
 
-**NOTE:** this is a fork of NetApp-hosted "Terraform NetApp ElementSW Provider". This repository is not associated with NetApp. To help with disambiguation, "NetApp" has been removed from the name, and "SolidFire" is used in place of "ElementSW". Terraform NetApp ElementSW Provider itself is based on a code initially developed by the SolidFire team for use with internal projects. The provider plugin was refactored to be published and maintained. It is possible that changes from Terraform SolidFire Provider may be submitted upstream to Terraform NetApp ElementSW Provider, but it's been forked because my primary goal is to experiment with it and not aim for pull request submission to Terraform NetApp ElementSW Provider.
+**NOTE:** 
+
+- This is a fork of NetApp-hosted "Terraform NetApp ElementSW Provider". 
+- This repository is not associated with NetApp. To help with disambiguation, "NetApp" has been removed from the name, and "SolidFire" is used in place of "ElementSW". Terraform NetApp ElementSW Provider itself is based on a code initially developed by the SolidFire team for use with internal projects. The provider plugin was refactored to be published and maintained. It is possible that changes from Terraform SolidFire Provider may be submitted upstream to Terraform NetApp ElementSW Provider, but it's been forked because my primary goal is to experiment with it and not aim for pull request submission to Terraform NetApp ElementSW Provider
 
 This provider was tested with SolidFire version 12.
 

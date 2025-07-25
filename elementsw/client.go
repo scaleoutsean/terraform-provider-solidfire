@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/netapp/terraform-provider-netapp-elementsw/elementsw/element/jsonrpc"
+	"github.com/scaleoutsean/terraform-solidfire-provider/elementsw/element/jsonrpc"
 	"github.com/sirupsen/logrus"
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )

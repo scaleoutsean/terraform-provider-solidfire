@@ -6,7 +6,7 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.30.0
 	github.com/sirupsen/logrus v1.7.0
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.10.0
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	gopkg.in/h2non/gock.v1 v1.0.15
 )

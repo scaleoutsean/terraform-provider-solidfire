@@ -1,3 +1,7 @@
+## 0.2.1 (Unreleased)
+
+* **New Resource:** QoS Policy (List, Get) in `elementsw_qos_policy`
+
 ## 0.2.0 (Unreleased)
 
 * **New:** Forked from Terraform NetApp ElementSW Provider (repository)

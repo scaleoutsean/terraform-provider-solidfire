@@ -9,7 +9,7 @@ import (
 
 	"github.com/fatih/structs"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/netapp/terraform-provider-netapp-elementsw/elementsw/element/jsonrpc"
+	"github.com/scaleoutsean/terraform-solidfire-provider/elementsw/element/jsonrpc"
 )
 
 // CreateAccountRequest is the user input for creating an account
