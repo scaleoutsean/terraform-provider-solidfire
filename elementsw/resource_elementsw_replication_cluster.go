@@ -23,6 +23,7 @@ func resourceElementSwReplicationCluster() *schema.Resource {
 			"pairing_key": {
 				Type:        schema.TypeString,
 				Optional:    true,
+				ForceNew:    true,
 				Description: "Pairing key generated from StartClusterPairing on the source cluster.",
 			},
 			// Workflow 2: Automated
@@ -51,6 +52,7 @@ func clusterConnectionSchema(desc string) *schema.Schema {
 	return &schema.Schema{
 		Type:        schema.TypeList,
 		Optional:    true,
+		ForceNew:    true,
 		MaxItems:    1,
 		Description: desc,
 		Elem: &schema.Resource{

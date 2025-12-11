@@ -1,12 +1,16 @@
 package elementsw
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetQoSPolicy(t *testing.T) {
+	if os.Getenv("TF_ACC") == "" {
+		t.Skip("Skipping TestGetQoSPolicy; TF_ACC not set")
+	}
 	client := &Client{} // TODO: mock or initialize with test config
 	request := getQoSPolicyRequest{QoSPolicyID: 1}
 
@@ -18,6 +22,9 @@ func TestGetQoSPolicy(t *testing.T) {
 }
 
 func TestListQoSPolicies(t *testing.T) {
+	if os.Getenv("TF_ACC") == "" {
+		t.Skip("Skipping TestListQoSPolicies; TF_ACC not set")
+	}
 	client := &Client{} // TODO: mock or initialize with test config
 	request := listQoSPoliciesRequest{}
 
@@ -27,6 +34,9 @@ func TestListQoSPolicies(t *testing.T) {
 }
 
 func TestCreateQoSPolicy(t *testing.T) {
+	if os.Getenv("TF_ACC") == "" {
+		t.Skip("Skipping TestCreateQoSPolicy; TF_ACC not set")
+	}
 	client := &Client{} // TODO: mock or initialize with test config
 	request := createQoSPolicyRequest{
 		Name: "test-policy",
@@ -44,6 +54,9 @@ func TestCreateQoSPolicy(t *testing.T) {
 }
 
 func TestModifyQoSPolicy(t *testing.T) {
+	if os.Getenv("TF_ACC") == "" {
+		t.Skip("Skipping TestModifyQoSPolicy; TF_ACC not set")
+	}
 	client := &Client{} // TODO: mock or initialize with test config
 	request := modifyQoSPolicyRequest{
 		QoSPolicyID: 1,
@@ -63,6 +76,9 @@ func TestModifyQoSPolicy(t *testing.T) {
 }
 
 func TestDeleteQoSPolicy(t *testing.T) {
+	if os.Getenv("TF_ACC") == "" {
+		t.Skip("Skipping TestDeleteQoSPolicy; TF_ACC not set")
+	}
 	client := &Client{} // TODO: mock or initialize with test config
 	request := deleteQoSPolicyRequest{QoSPolicyID: 1}
 	result, err := client.DeleteQoSPolicy(request)

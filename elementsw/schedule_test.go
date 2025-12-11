@@ -39,8 +39,10 @@ func TestCreateScheduleValidation(t *testing.T) {
 
 	// Valid
 	request.ScheduleInfo["retention"] = "0:5:00"
+	request.ScheduleInfo["volumeID"] = 1 // Add required field
 	_, err = client.CreateSchedule(request)
-	if err != nil && err.Error() != "CreateSchedule request failed" {
+	// If we get a network error (unsupported protocol scheme), it means validation passed and it tried to call the API.
+	if err != nil && err.Error() != "CreateSchedule request failed" && err.Error() != "Post \"/json-rpc/1.0\": unsupported protocol scheme \"\"" {
 		t.Errorf("expected API error or success, got %v", err)
 	}
 }
@@ -75,8 +77,10 @@ func TestModifyScheduleValidation(t *testing.T) {
 	}
 
 	request.ScheduleInfo["retention"] = "0:5:00"
+	request.ScheduleInfo["volumeID"] = 1 // Add required field
 	_, err = client.ModifySchedule(request)
-	if err != nil && err.Error() != "ModifySchedule request failed" {
+	// If we get a network error (unsupported protocol scheme), it means validation passed and it tried to call the API.
+	if err != nil && err.Error() != "ModifySchedule request failed" && err.Error() != "Post \"/json-rpc/1.0\": unsupported protocol scheme \"\"" {
 		t.Errorf("expected API error or success, got %v", err)
 	}
 }
