@@ -198,7 +198,7 @@ go get github.com/x-cray/logrus-prefixed-formatter
 Note getting the Terraform package also builds and installs Terraform in `$GOPATH/bin`.
 The version in `go/bin` is a stable release.
 
-#### Cloning the NetApp provider repository and building the provider
+#### Cloning the provider repository and building the provider
 
 ```sh
 mkdir -p $GOPATH/src/github.com/scaleoutseasn
@@ -213,9 +213,9 @@ The build step will install the provider in the `$GOPATH/bin` directory. Copy it
 
 ```hcl
 required_providers {
-  netapp-elementsw = {
+  solidfire = {
     version = "0.2.0"
-    source = "scaleoutsean.github.io/netapp-elementsw"
+    source = "scaleoutsean.github.io/solidfire"
   }
 }
 ```

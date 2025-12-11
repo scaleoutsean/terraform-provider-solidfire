@@ -12,20 +12,45 @@ import (
 	"github.com/scaleoutsean/terraform-provider-solidfire/elementsw/element/jsonrpc"
 )
 
+// validateVolumeAttributes enforces max 10 KV pairs and max 1000 bytes JSON
+func validateVolumeAttributes(val interface{}, key string) (warns []string, errs []error) {
+	   m, ok := val.(map[string]interface{})
+	   if !ok {
+			   errs = append(errs, fmt.Errorf("attributes must be a map of string to string"))
+			   return
+	   }
+	   if len(m) > 10 {
+			   errs = append(errs, fmt.Errorf("attributes cannot have more than 10 key-value pairs"))
+	   }
+	   // Convert to JSON and check size
+	   b, err := json.Marshal(m)
+	   if err != nil {
+			   errs = append(errs, fmt.Errorf("attributes could not be JSON encoded: %v", err))
+	   } else if len(b) > 1000 {
+			   errs = append(errs, fmt.Errorf("attributes JSON encoding exceeds 1000 bytes (actual: %d)", len(b)))
+	   }
+   return
+}
 // CreateVolumeRequest the users input for creating a Volume
 type CreateVolumeRequest struct {
-	Name       string           `structs:"name"`
-	AccountID  int              `structs:"accountID"`
-	TotalSize  int              `structs:"totalSize"`
-	Enable512E bool             `structs:"enable512e"`
-	Attributes interface{}      `structs:"attributes"`
-	QOS        QualityOfService `structs:"qos"`
+	   Name                    string           `structs:"name"`
+	   AccountID               int              `structs:"accountID"`
+	   TotalSize               int              `structs:"totalSize"`
+	   Enable512E              bool             `structs:"enable512e"`
+	   Attributes              interface{}      `structs:"attributes"`
+	   QOS                     QualityOfService `structs:"qos,omitempty"`
+	   QoSPolicyID             int              `structs:"qosPolicyID,omitempty"`
+	   AssociateWithQoSPolicy  bool             `structs:"associateWithQoSPolicy,omitempty"`
+	   EnableSnapMirrorReplication bool          `structs:"enableSnapMirrorReplication,omitempty"`
+	   FifoSize                string           `structs:"fifoSize,omitempty"`
+	   MinFifoSize             string           `structs:"minFifoSize,omitempty"`
 }
 
 // CreateVolumeResult the api results for creating a volume
 type CreateVolumeResult struct {
-	VolumeID int    `json:"volumeID"`
-	Volume   volume `json:"volume"`
+	   VolumeID   int    `json:"volumeID"`
+	   Volume     volume `json:"volume"`
+	   QoSPolicyID *int  `json:"qosPolicyID"`
 }
 
 // DeleteVolumeRequest the user input for deleteing a volume
@@ -89,13 +114,12 @@ func resourceElementSwVolume() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
-			"attributes": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-			},
+		   "attributes": {
+			   Type:     schema.TypeMap,
+			   Optional: true,
+			   Elem:     &schema.Schema{Type: schema.TypeString},
+			   ValidateFunc: validateVolumeAttributes,
+		   },
 			"iqn": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -116,16 +140,15 @@ func resourceElementSwVolumeCreate(d *schema.ResourceData, meta interface{}) err
 		return fmt.Errorf("name argument is required")
 	}
 
-	if a, ok := d.GetOk("account"); ok {
-		accountDetails, err := client.getAccountByIDOrName(a)
-		if err == nil {
-			volume.AccountID = accountDetails.AccountID
-		} else {
-			return fmt.Errorf("Account ID or name %#v not found", a.(string))
-		}
-	} else {
-		return fmt.Errorf("Account name or ID argument is required")
-	}
+	   if a, ok := d.GetOk("account_id"); ok {
+			   accountID, ok := a.(int)
+			   if !ok {
+					   return fmt.Errorf("account_id must be an integer")
+			   }
+			   volume.AccountID = accountID
+	   } else {
+			   return fmt.Errorf("account_id argument is required")
+	   }
 
 	if v, ok := d.GetOk("total_size"); ok {
 		volume.TotalSize = v.(int)
@@ -139,17 +162,27 @@ func resourceElementSwVolumeCreate(d *schema.ResourceData, meta interface{}) err
 		return fmt.Errorf("enable512e argument is required")
 	}
 
-	if v, ok := d.GetOk("min_iops"); ok {
-		volume.QOS.MinIOPS = v.(int)
-	}
+	   if v, ok := d.GetOk("min_iops"); ok {
+			   volume.QOS.MinIOPS = v.(int)
+	   }
 
-	if v, ok := d.GetOk("max_iops"); ok {
-		volume.QOS.MaxIOPS = v.(int)
-	}
+	   if v, ok := d.GetOk("max_iops"); ok {
+			   volume.QOS.MaxIOPS = v.(int)
+	   }
 
-	if v, ok := d.GetOk("burst_iops"); ok {
-		volume.QOS.BurstIOPS = v.(int)
-	}
+	   if v, ok := d.GetOk("burst_iops"); ok {
+			   volume.QOS.BurstIOPS = v.(int)
+	   }
+
+	   if v, ok := d.GetOk("attributes"); ok {
+			   // Validate again at runtime (defensive)
+			   if warns, errs := validateVolumeAttributes(v, "attributes"); len(errs) > 0 {
+					   return fmt.Errorf("invalid attributes: %v", errs)
+			   } else if len(warns) > 0 {
+					   log.Printf("attributes validation warning: %v", warns)
+			   }
+			   volume.Attributes = v
+	   }
 
 	resp, err := createVolume(client, volume)
 	if err != nil {
@@ -165,22 +198,27 @@ func resourceElementSwVolumeCreate(d *schema.ResourceData, meta interface{}) err
 }
 
 func createVolume(client *Client, request CreateVolumeRequest) (CreateVolumeResult, error) {
-	params := structs.Map(request)
+	   params := structs.Map(request)
 
-	log.Printf("Parameters: %v", params)
+	   // Remove qos if qosPolicyID is set and associateWithQoSPolicy is true
+	   if request.QoSPolicyID > 0 && request.AssociateWithQoSPolicy {
+			   delete(params, "qos")
+	   }
 
-	response, err := client.CallAPIMethod("CreateVolume", params)
-	if err != nil {
-		log.Print("CreateVolume request failed")
-		return CreateVolumeResult{}, err
-	}
+	   log.Printf("Parameters: %v", params)
 
-	var result CreateVolumeResult
-	if err := json.Unmarshal([]byte(*response), &result); err != nil {
-		log.Print("Failed to unmarshall response from CreateVolume")
-		return CreateVolumeResult{}, err
-	}
-	return result, nil
+	   response, err := client.CallAPIMethod("CreateVolume", params)
+	   if err != nil {
+			   log.Print("CreateVolume request failed")
+			   return CreateVolumeResult{}, err
+	   }
+
+	   var result CreateVolumeResult
+	   if err := json.Unmarshal([]byte(*response), &result); err != nil {
+			   log.Print("Failed to unmarshall response from CreateVolume")
+			   return CreateVolumeResult{}, err
+	   }
+	   return result, nil
 }
 
 func resourceElementSwVolumeRead(d *schema.ResourceData, meta interface{}) error {
@@ -206,7 +244,7 @@ func resourceElementSwVolumeRead(d *schema.ResourceData, meta interface{}) error
 	}
 
 	if len(res.Volumes) != 1 {
-		return fmt.Errorf("Expected one Volume to be found. Response contained %v results", len(res.Volumes))
+	   return fmt.Errorf("expected one volume to be found. response contained %v results", len(res.Volumes))
 	}
 
 	d.Set("name", res.Volumes[0].Name)
@@ -228,32 +266,40 @@ func resourceElementSwVolumeUpdate(d *schema.ResourceData, meta interface{}) err
 	}
 	volume.VolumeID = convID
 
-	if a, ok := d.GetOk("account"); ok {
-		accountDetails, err := client.getAccountByIDOrName(a)
-		if err == nil {
-			volume.AccountID = accountDetails.AccountID
-		} else {
-			return fmt.Errorf("Account ID or name %#v not found", a.(string))
-		}
-	} else {
-		return fmt.Errorf("Account name or ID argument is required")
-	}
+	   if a, ok := d.GetOk("account_id"); ok {
+			   accountID, ok := a.(int)
+			   if !ok {
+					   return fmt.Errorf("account_id must be an integer")
+			   }
+			   volume.AccountID = accountID
+	   } else {
+			   return fmt.Errorf("account_id argument is required")
+	   }
 
 	if v, ok := d.GetOk("total_size"); ok {
 		volume.TotalSize = v.(int)
 	}
 
-	if v, ok := d.GetOk("min_iops"); ok {
-		volume.QOS.MinIOPS = v.(int)
-	}
+	   if v, ok := d.GetOk("min_iops"); ok {
+			   volume.QOS.MinIOPS = v.(int)
+	   }
 
-	if v, ok := d.GetOk("max_iops"); ok {
-		volume.QOS.MaxIOPS = v.(int)
-	}
+	   if v, ok := d.GetOk("max_iops"); ok {
+			   volume.QOS.MaxIOPS = v.(int)
+	   }
 
-	if v, ok := d.GetOk("burst_iops"); ok {
-		volume.QOS.BurstIOPS = v.(int)
-	}
+	   if v, ok := d.GetOk("burst_iops"); ok {
+			   volume.QOS.BurstIOPS = v.(int)
+	   }
+
+	   if v, ok := d.GetOk("attributes"); ok {
+			   if warns, errs := validateVolumeAttributes(v, "attributes"); len(errs) > 0 {
+					   return fmt.Errorf("invalid attributes: %v", errs)
+			   } else if len(warns) > 0 {
+					   log.Printf("attributes validation warning: %v", warns)
+			   }
+			   volume.Attributes = v
+	   }
 
 	err := updateVolume(client, volume)
 	if err != nil {

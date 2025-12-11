@@ -14,9 +14,7 @@ type configStuct struct {
 }
 
 // Client contain the api endpoint
-type clientStuct struct {
-	Endpoint string
-}
+// Removed unused type clientStuct
 
 // APIError is any error the api gives
 type APIError struct {

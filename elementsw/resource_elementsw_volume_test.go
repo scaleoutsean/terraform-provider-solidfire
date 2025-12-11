@@ -108,6 +108,12 @@ resource "elementsw_volume" "terraform-acceptance-test-1" {
 	min_iops = "%s"
 	max_iops = "%s"
 	burst_iops = "%s"
+	attributes = ["proxmox", "key=value", "some_id=1"]
+	associate_with_qos_policy = true
+	qos_policy_id = 4
+	enable_snap_mirror_replication = false
+	fifo_size = "5"
+	min_fifo_size = "3"
 }
 resource "elementsw_account" "terraform-acceptance-test-1" {
 	username = "terraform-acceptance-test-volume"

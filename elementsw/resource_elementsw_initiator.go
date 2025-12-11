@@ -11,9 +11,18 @@ import (
 	"github.com/scaleoutsean/terraform-provider-solidfire/elementsw/element/jsonrpc"
 )
 
+// initiator represents an initiator object for API requests
+type apiInitiator struct {
+	InitiatorID        int      `structs:"initiatorID,omitempty"`
+	Name               string   `structs:"name"`
+	Alias              string   `structs:"alias,omitempty"`
+	VolumeAccessGroupID int      `structs:"volumeAccessGroupID,omitempty"`
+	IQNs               []string `structs:"iqns,omitempty"`
+}
+
 // CreateInitiatorsRequest the user input for creating an initiator
 type CreateInitiatorsRequest struct {
-	Initiators []initiator `structs:"initiators"`
+	Initiators []apiInitiator `structs:"initiators"`
 }
 
 // CreateInitiatorsResult the API resutls for creatin an initiator
@@ -28,7 +37,7 @@ type DeleteInitiatorsRequest struct {
 
 // ModifyInitiatorsRequest the users input for modifying a Request
 type ModifyInitiatorsRequest struct {
-	Initiators []initiator `structs:"initiators"`
+	Initiators []apiInitiator `structs:"initiators"`
 }
 
 func resourceElementSwInitiator() *schema.Resource {
@@ -78,7 +87,7 @@ func resourceElementSwInitiatorCreate(d *schema.ResourceData, meta interface{}) 
 	client := meta.(*Client)
 
 	initiators := CreateInitiatorsRequest{}
-	newInitiator := make([]initiator, 1)
+	newInitiator := make([]apiInitiator, 1)
 	var iqns []string
 
 	if v, ok := d.GetOk("name"); ok {
@@ -95,14 +104,14 @@ func resourceElementSwInitiatorCreate(d *schema.ResourceData, meta interface{}) 
 		newInitiator[0].VolumeAccessGroupID = v.(int)
 	}
 
-	if v, ok := d.GetOk("iqns"); ok {
-
-		if a, ok := v.([]interface{}); ok {
-			for i := range a {
-				iqns = append(iqns, a[i].(string))
-			}
-		}
-	}
+   if v, ok := d.GetOk("iqns"); ok {
+	  if a, ok := v.([]interface{}); ok {
+		 for i := range a {
+			iqns = append(iqns, a[i].(string))
+		 }
+		 newInitiator[0].IQNs = iqns
+	  }
+   }
 
 	initiators.Initiators = newInitiator
 
@@ -161,7 +170,7 @@ func resourceElementSwInitiatorRead(d *schema.ResourceData, meta interface{}) er
 	}
 
 	if len(res.Initiators) != 1 {
-		return fmt.Errorf("Expected one Initiator to be found. Response contained %v results", len(res.Initiators))
+		return fmt.Errorf("expected one initiator to be found. response contained %v results", len(res.Initiators))
 	}
 
 	d.Set("name", res.Initiators[0].Name)
@@ -180,7 +189,7 @@ func resourceElementSwInitiatorUpdate(d *schema.ResourceData, meta interface{}) 
 	client := meta.(*Client)
 
 	initiators := ModifyInitiatorsRequest{}
-	initiator := make([]initiator, 1)
+	initiator := make([]apiInitiator, 1)
 
 	id := d.Id()
 	convID, convErr := strconv.Atoi(id)

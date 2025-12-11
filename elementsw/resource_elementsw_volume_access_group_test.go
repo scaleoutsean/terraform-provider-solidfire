@@ -191,9 +191,3 @@ resource "elementsw_account" "terraform-acceptance-test-1" {
 }
 `
 
-const testAccCheckElementSwVolumeAccessGroupConfigRemoveVolumes = `
-resource "elementsw_volume_access_group" "terraform-acceptance-test-1" {
-	name = "%s"
-	volumes = ["%s"]
-}
-`

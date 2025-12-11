@@ -50,11 +50,11 @@ func (c *Client) getVolumeAccessGroupByID(id string) (volumeAccessGroup, error) 
 	}
 
 	if len(result.VolumeAccessGroupsNotFound) > 0 {
-		return volumeAccessGroup{}, fmt.Errorf("Unable to find Volume Access Groups with the ID of %v", result.VolumeAccessGroupsNotFound)
+		return volumeAccessGroup{}, fmt.Errorf("unable to find volume access groups with the id of %v", result.VolumeAccessGroupsNotFound)
 	}
 
 	if len(result.VolumeAccessGroups) != 1 {
-		return volumeAccessGroup{}, fmt.Errorf("Expected one Volume Access Group to be found. Response contained %v results", len(result.VolumeAccessGroups))
+		return volumeAccessGroup{}, fmt.Errorf("expected one volume access group to be found. response contained %v results", len(result.VolumeAccessGroups))
 	}
 
 	return result.VolumeAccessGroups[0], nil

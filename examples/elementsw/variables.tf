@@ -18,7 +18,7 @@ variable "elementsw_cluster" {
 
 variable "elementsw_api_version" {
   type        = string
-  default     = "11.7"
+  default     = "12.5"
   description = "The API version of the Element cluster."
 }
 

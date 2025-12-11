@@ -11,7 +11,6 @@ import (
 )
 
 func TestAccount_basic(t *testing.T) {
-	return
 	var account account
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -33,7 +32,6 @@ func TestAccount_basic(t *testing.T) {
 }
 
 func TestAccount_secrets(t *testing.T) {
-	return
 	var account account
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -59,10 +57,8 @@ func TestAccount_secrets(t *testing.T) {
 }
 
 func TestAccount_update(t *testing.T) {
-	return
 	var account account
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckElementSwAccountDestroy,
 		Steps: []resource.TestStep{
@@ -97,9 +93,7 @@ func TestAccount_update(t *testing.T) {
 }
 
 func testAccCheckElementSwAccountDestroy(s *terraform.State) error {
-	return nil
 	virConn := testAccProvider.Meta().(*Client)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "elementsw_account" {
 			continue
@@ -110,9 +104,9 @@ func testAccCheckElementSwAccountDestroy(s *terraform.State) error {
 			return convErr
 		}
 
-		_, err := virConn.getAccountByID(convID)
+		_, err := virConn.GetAccountByID(convID)
 		if err == nil {
-			return fmt.Errorf("Error waiting for volume (%s) to be destroyed: %s", rs.Primary.ID, err)
+			return fmt.Errorf("Error waiting for account (%s) to be destroyed", rs.Primary.ID)
 		}
 	}
 
@@ -120,10 +114,8 @@ func testAccCheckElementSwAccountDestroy(s *terraform.State) error {
 }
 
 func testAccCheckElementSwAccountExists(n string, account *account) resource.TestCheckFunc {
-	return nil
 	return func(s *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -138,7 +130,7 @@ func testAccCheckElementSwAccountExists(n string, account *account) resource.Tes
 			return err
 		}
 
-		retrievedAcc, err := virConn.getAccountByID(convID)
+		retrievedAcc, err := virConn.GetAccountByID(convID)
 		if err != nil {
 			return err
 		}

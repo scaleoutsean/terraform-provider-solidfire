@@ -139,7 +139,7 @@ func resourceElementSwAccountRead(d *schema.ResourceData, meta interface{}) erro
 		return fmt.Errorf("id argument is required")
 	}
 
-	res, err := client.getAccountByID(convID)
+	res, err := client.GetAccountByID(convID)
 	if err != nil {
 		log.Print("GetAccountByID failed")
 		return err
@@ -251,7 +251,7 @@ func resourceElementSwAccountExists(d *schema.ResourceData, meta interface{}) (b
 		return false, fmt.Errorf("id argument is required")
 	}
 
-	_, err := client.getAccountByID(convID)
+	_, err := client.GetAccountByID(convID)
 	if err != nil {
 		if err, ok := err.(*jsonrpc.ResponseError); ok {
 			if err.Name == "xUnknownAccount" {

@@ -1,15 +1,75 @@
-// ...existing code...
-
 package elementsw
 
 import (
 	"encoding/json"
-	"log"
-
 	"fmt"
+	"log"
 
 	"github.com/fatih/structs"
 )
+
+type modifyQoSPolicyRequest struct {
+	   QoSPolicyID int        `structs:"qosPolicyID"`
+	   Name        string     `structs:"name,omitempty"`
+	   QoS         qosDetails `structs:"qos"`
+}
+
+type modifyQoSPolicyResult struct {
+	   QoSPolicy qosPolicy `json:"qosPolicy"`
+}
+
+func (c *Client) ModifyQoSPolicy(request modifyQoSPolicyRequest) (modifyQoSPolicyResult, error) {
+	   // Validation (same as Create)
+	   if request.QoS.MinIOPS < 50 || request.QoS.MinIOPS > 15000 {
+			   return modifyQoSPolicyResult{}, fmt.Errorf("minIOPS must be 50-15000")
+	   }
+	   if request.QoS.MaxIOPS < 100 || request.QoS.MaxIOPS > 50000 || request.QoS.MaxIOPS <= request.QoS.MinIOPS {
+			   return modifyQoSPolicyResult{}, fmt.Errorf("maxIOPS must be 100-50000 and greater than minIOPS")
+	   }
+	   if request.QoS.BurstIOPS < 100 || request.QoS.BurstIOPS > 200000 || request.QoS.BurstIOPS <= request.QoS.MaxIOPS {
+			   return modifyQoSPolicyResult{}, fmt.Errorf("burstIOPS must be 100-200000 and greater than maxIOPS")
+	   }
+	   // Name is optional, but if present, must be 1-40 chars
+	   if len(request.Name) > 0 && (len(request.Name) < 1 || len(request.Name) > 40) {
+			   return modifyQoSPolicyResult{}, fmt.Errorf("name must be 1-40 alphanumeric characters if specified")
+	   }
+
+	   params := structs.Map(request)
+	   response, err := c.CallAPIMethod("ModifyQoSPolicy", params)
+	   if err != nil {
+			   log.Print("ModifyQoSPolicy request failed")
+			   return modifyQoSPolicyResult{}, err
+	   }
+
+	   var result modifyQoSPolicyResult
+	   if err := json.Unmarshal([]byte(*response), &result); err != nil {
+			   log.Print("Failed to unmarshall response from ModifyQoSPolicy")
+			   return modifyQoSPolicyResult{}, err
+	   }
+
+	   return result, nil
+}
+
+
+type deleteQoSPolicyRequest struct {
+	   QoSPolicyID int `structs:"qosPolicyID"`
+}
+
+type deleteQoSPolicyResult struct {
+	   // Empty result
+}
+
+func (c *Client) DeleteQoSPolicy(request deleteQoSPolicyRequest) (deleteQoSPolicyResult, error) {
+	   params := structs.Map(request)
+	   _, err := c.CallAPIMethod("DeleteQoSPolicy", params)
+	   if err != nil {
+			   log.Print("DeleteQoSPolicy request failed")
+			   return deleteQoSPolicyResult{}, err
+	   }
+
+	   // The result is always empty
+	   return deleteQoSPolicyResult{}, nil
+}
 
 type createQoSPolicyRequest struct {
 	Name string     `structs:"name"`
@@ -29,11 +89,11 @@ func (c *Client) CreateQoSPolicy(request createQoSPolicyRequest) (createQoSPolic
 	if request.QoS.MinIOPS < 50 || request.QoS.MinIOPS > 15000 {
 		return createQoSPolicyResult{}, fmt.Errorf("minIOPS must be 50-15000")
 	}
-	if request.QoS.MaxIOPS < 51 || request.QoS.MaxIOPS > 50000 || request.QoS.MaxIOPS <= request.QoS.MinIOPS {
-		return createQoSPolicyResult{}, fmt.Errorf("maxIOPS must be 51-50000 and greater than minIOPS")
+	if request.QoS.MaxIOPS < 100 || request.QoS.MaxIOPS > 50000 || request.QoS.MaxIOPS <= request.QoS.MinIOPS {
+		return createQoSPolicyResult{}, fmt.Errorf("maxIOPS must be 100-50000 and greater than minIOPS")
 	}
-	if request.QoS.BurstIOPS < 100 || request.QoS.BurstIOPS > 20000 || request.QoS.BurstIOPS <= request.QoS.MaxIOPS {
-		return createQoSPolicyResult{}, fmt.Errorf("burstIOPS must be 100-20000 and greater than maxIOPS")
+	if request.QoS.BurstIOPS < 100 || request.QoS.BurstIOPS > 200000 || request.QoS.BurstIOPS <= request.QoS.MaxIOPS {
+		return createQoSPolicyResult{}, fmt.Errorf("burstIOPS must be 100-200000 and greater than maxIOPS")
 	}
 
 	params := structs.Map(request)

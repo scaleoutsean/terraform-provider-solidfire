@@ -106,6 +106,69 @@ terraform apply \
   -var="elementsw_tenant_name=testCluster01"
 ```
 
+### Example three: Cluster Stats Data Source
+
+This example demonstrates how to use the `elementsw_cluster_stats` data source to retrieve cluster capacity and performance metrics.
+
+```hcl
+data "elementsw_cluster_stats" "current" {}
+
+output "cluster_health" {
+  value = {
+    volumes_total    = data.elementsw_cluster_stats.current.volume_count
+    nodes_total      = data.elementsw_cluster_stats.current.node_count
+    # Note: density is an average across all nodes. Individual nodes may have higher counts.
+    density          = data.elementsw_cluster_stats.current.volumes_per_node
+    efficiency_ratio = data.elementsw_cluster_stats.current.compression_factor
+    current_iops     = data.elementsw_cluster_stats.current.metrics[0].actual_iops
+    used_space       = data.elementsw_cluster_stats.current.capacity[0].used_space
+  }
+}
+```
+
+### Example four: Replication
+
+This example demonstrates how to set up cluster and volume replication.
+
+```hcl
+# 1. Pair Clusters
+resource "elementsw_replication_cluster" "dr_site" {
+  source_cluster {
+    endpoint = "https://10.10.10.10/json-rpc/12.5"
+    username = "admin"
+    password = "password"
+  }
+  target_cluster {
+    endpoint = "https://10.20.20.20/json-rpc/12.5"
+    username = "admin"
+    password = "password"
+  }
+}
+
+# 2. Create Volume on Source
+resource "elementsw_volume" "primary" {
+  name       = "primary-vol"
+  account_id = 1
+  total_size = 1000000000
+  enable512e = true
+}
+
+# 3. Enable Replication for Volume
+resource "elementsw_replication_volume" "dr_vol" {
+  volume_id = elementsw_volume.primary.id
+  
+  # Optional: Provide target credentials to automatically complete pairing on the target side.
+  # If omitted, pairing must be completed manually or via a separate process.
+  target_cluster {
+    endpoint = "https://10.20.20.20/json-rpc/12.5"
+    username = "admin"
+    password = "password"
+  }
+}
+```
+
+**Note:** Currently, if cluster pairing fails or is destroyed, there is no automatic cleanup of the "dangling" relationship on the remote cluster. You may need to manually remove the cluster pair on the other side or dangling relationship on the source. For example, the remote cluster could already have the maximum number of cluster relationships and depite correct functioning of this provider, cluster pairing with that cluster would fail.
+
 ### Add own validation rules
 
 To implement own naming rules or conventions, feel free to create Terraform validation rules.
@@ -126,6 +189,24 @@ variable "volume_name" {
 
 `variables.tf` contains few other example of validation rules (acceptable volume sizes (min 1Gi, max 16TiB), initiator secrets, and volume QoS values).
 
+
 ### Extend
 
 If you wish to extend the scope of this provider with minor features, Terraform [generic provisioners](https://www.terraform.io/docs/language/resources/provisioners/file.html) or vendor provisioners may be a convenient way to achieve that without developing in Go.
+
+## Tests
+
+Set the following variables:
+- ELEMENTSW_USERNAME
+- ELEMENTSW_PASSWORD
+- ELEMENTSW_SERVER
+- ELEMENTSW_API_VERSION
+
+To run replication tests, also set:
+- ELEMENTSW_SERVER_DR (Target cluster endpoint)
+- ELEMENTSW_USERNAME_DR (Optional, defaults to ELEMENTSW_USERNAME)
+- ELEMENTSW_PASSWORD_DR (Optional, defaults to ELEMENTSW_PASSWORD)
+
+```sh
+go test -v ./elementsw -run TestAccElementsw_FullCycle
+```

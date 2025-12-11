@@ -6,25 +6,27 @@ import (
 	"os"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform/terraform"
 )
 
-var testAccProviders map[string]terraform.ResourceProvider
+var testAccProviders map[string]*schema.Provider
 var testAccProvider *schema.Provider
+var testAccProviderFactories = map[string]func() (*schema.Provider, error){
+	"elementsw": func() (*schema.Provider, error) { return Provider(), nil },
+}
 
 func TestProvider(t *testing.T) {
-	if err := Provider().(*schema.Provider).InternalValidate(); err != nil {
+	if err := Provider().InternalValidate(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 }
 
 func TestProvider_impl(t *testing.T) {
-	var _ terraform.ResourceProvider = Provider()
+	var _ *schema.Provider = Provider()
 }
 
 func init() {
-	testAccProvider = Provider().(*schema.Provider)
-	testAccProviders = map[string]terraform.ResourceProvider{
+	testAccProvider = Provider()
+	testAccProviders = map[string]*schema.Provider{
 		"elementsw": testAccProvider,
 	}
 }

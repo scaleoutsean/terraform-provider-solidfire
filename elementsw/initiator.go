@@ -57,7 +57,7 @@ func (c *Client) getInitiatorByID(id string) (initiator, error) {
 	}
 
 	if len(result.Initiators) != 1 {
-		return initiator{}, fmt.Errorf("Expected one Initiator to be found. Response contained %v results", len(result.Initiators))
+		return initiator{}, fmt.Errorf("expected one initiator to be found. response contained %v results", len(result.Initiators))
 	}
 
 	var initiator initiator

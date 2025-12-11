@@ -157,11 +157,11 @@ func resourceElementSwVolumeAccessGroupRead(d *schema.ResourceData, meta interfa
 	}
 
 	if len(res.VolumeAccessGroupsNotFound) > 0 {
-		return fmt.Errorf("Unable to find Volume Access Groups with the ID of %v", res.VolumeAccessGroupsNotFound)
+		return fmt.Errorf("unable to find volume access groups with the id of %v", res.VolumeAccessGroupsNotFound)
 	}
 
 	if len(res.VolumeAccessGroups) != 1 {
-		return fmt.Errorf("Expected one Volume Access Group to be found. Response contained %v results", len(res.VolumeAccessGroups))
+		return fmt.Errorf("expected one volume access group to be found, response contained %v results", len(res.VolumeAccessGroups))
 	}
 
 	d.Set("name", res.VolumeAccessGroups[0].Name)

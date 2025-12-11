@@ -1,3 +1,7 @@
+terraform-solidfire-provider.code-workspace
+terraform-provider-solidfire
+.github/
+.github
 examples/elementsw/terraform.tfstate*
 examples/elementsw/terraform.tfvars
 examples/elementsw/.terraform/

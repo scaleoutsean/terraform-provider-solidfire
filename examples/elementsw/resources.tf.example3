@@ -1,0 +1,15 @@
+# Example: Cluster Stats Data Source
+
+data "elementsw_cluster_stats" "current" {}
+
+output "cluster_health" {
+  value = {
+    volumes_total    = data.elementsw_cluster_stats.current.volume_count
+    nodes_total      = data.elementsw_cluster_stats.current.node_count
+    # Note: density is an average across all nodes. Individual nodes may have higher counts.
+    density          = data.elementsw_cluster_stats.current.volumes_per_node
+    efficiency_ratio = data.elementsw_cluster_stats.current.compression_factor
+    current_iops     = data.elementsw_cluster_stats.current.metrics[0].actual_iops
+    used_space       = data.elementsw_cluster_stats.current.capacity[0].used_space
+  }
+}

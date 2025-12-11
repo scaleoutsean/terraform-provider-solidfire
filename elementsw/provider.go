@@ -40,6 +40,15 @@ func Provider() *schema.Provider {
 			"elementsw_volume":              resourceElementSwVolume(),
 			"elementsw_account":             resourceElementSwAccount(),
 			"elementsw_qos_policy":         resourceElementswQoSPolicy(),
+			"elementsw_schedule":           resourceElementswSchedule(),
+			"elementsw_replication_cluster": resourceElementSwReplicationCluster(),
+			"elementsw_replication_volume":  resourceElementSwReplicationVolume(),
+		},
+
+		DataSourcesMap: map[string]*schema.Resource{
+			"elementsw_cluster": dataSourceElementSwCluster(),
+			"elementsw_volume_iqn": dataSourceElementSwVolumeIQN(),
+			"elementsw_cluster_stats": dataSourceElementSwClusterStats(),
 		},
 
 		ConfigureFunc: providerConfigure,

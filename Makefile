@@ -1,0 +1,32 @@
+# Run provider acceptance tests for QoS Policy
+# Usage: source your credentials, then run `make testacc-qos-policy`
+
+
+testacc-qos-policy:
+	@ELEMENTSW_USERNAME=$(ELEMENTSW_USERNAME) \
+	ELEMENTSW_PASSWORD=$(ELEMENTSW_PASSWORD) \
+	ELEMENTSW_SERVER=$(ELEMENTSW_SERVER) \
+	ELEMENTSW_API_VERSION=$(ELEMENTSW_API_VERSION) \
+	TEST_QOS_POLICY_ID=$(TEST_QOS_POLICY_ID) \
+	go test ./elementsw -v -run TestAccElementswQoSPolicy
+
+testacc-volume:
+	@ELEMENTSW_USERNAME=$(ELEMENTSW_USERNAME) \
+	ELEMENTSW_PASSWORD=$(ELEMENTSW_PASSWORD) \
+	ELEMENTSW_SERVER=$(ELEMENTSW_SERVER) \
+	ELEMENTSW_API_VERSION=$(ELEMENTSW_API_VERSION) \
+	go test ./elementsw -v -run TestAccElementswVolume
+
+testacc-account:
+	@ELEMENTSW_USERNAME=$(ELEMENTSW_USERNAME) \
+	ELEMENTSW_PASSWORD=$(ELEMENTSW_PASSWORD) \
+	ELEMENTSW_SERVER=$(ELEMENTSW_SERVER) \
+	ELEMENTSW_API_VERSION=$(ELEMENTSW_API_VERSION) \
+	go test ./elementsw -v -run TestAccElementswAccount
+
+testacc-initiator:
+	@ELEMENTSW_USERNAME=$(ELEMENTSW_USERNAME) \
+	ELEMENTSW_PASSWORD=$(ELEMENTSW_PASSWORD) \
+	ELEMENTSW_SERVER=$(ELEMENTSW_SERVER) \
+	ELEMENTSW_API_VERSION=$(ELEMENTSW_API_VERSION) \
+	go test ./elementsw -v -run TestAccElementswInitiator

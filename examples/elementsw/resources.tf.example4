@@ -1,0 +1,28 @@
+# Example: Replication
+
+# 1. Pair Clusters
+resource "elementsw_replication_cluster" "dr_site" {
+  source_cluster {
+    endpoint = "https://10.10.10.10/json-rpc/12.5"
+    username = "admin"
+    password = "password"
+  }
+  target_cluster {
+    endpoint = "https://10.20.20.20/json-rpc/12.5"
+    username = "admin"
+    password = "password"
+  }
+}
+
+# 2. Create Volume on Source
+resource "elementsw_volume" "primary" {
+  name       = "primary-vol"
+  account_id = 1
+  total_size = 1000000000
+  enable512e = true
+}
+
+# 3. Enable Replication for Volume
+resource "elementsw_replication_volume" "dr_vol" {
+  volume_id = elementsw_volume.primary.id
+}
