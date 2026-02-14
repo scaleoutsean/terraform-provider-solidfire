@@ -138,7 +138,7 @@ func testAccCheckElementSwInitiatorExists(n string, initiator *initiator) resour
 			return err
 		}
 
-		convID, err := strconv.Atoi(rs.Primary.ID)
+		convID, err := strconv.ParseInt(rs.Primary.ID, 10, 64)
 		if err != nil {
 			return err
 		}

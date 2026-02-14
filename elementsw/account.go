@@ -15,9 +15,9 @@ type account struct {
 	Username        string      `json:"username"`
 }
 
-func (c *Client) GetAccountByID(id int) (account, error) {
+func (c *Client) GetAccountByID(id int64) (account, error) {
 	req := sdk.GetAccountByIDRequest{
-		AccountID: int64(id),
+		AccountID: id,
 	}
 	c.initOnce.Do(c.init)
 	res, sdkErr := c.sdkClient.GetAccountByID(context.TODO(), &req)

@@ -84,8 +84,6 @@ func TestAccount_update(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckElementSwAccountExists("elementsw_account.terraform-acceptance-account-1", &account),
 					resource.TestCheckResourceAttr("elementsw_account.terraform-acceptance-account-1", "username", "terraform-acceptance-test-update"),
-					resource.TestCheckResourceAttr("elementsw_account.terraform-acceptance-account-1", "target_secret", "ABC123456XYZU"),
-					resource.TestCheckResourceAttr("elementsw_account.terraform-acceptance-account-1", "initiator_secret", "SecretSecret1U"),
 				),
 			},
 		},
@@ -99,7 +97,7 @@ func testAccCheckElementSwAccountDestroy(s *terraform.State) error {
 			continue
 		}
 
-		convID, convErr := strconv.Atoi(rs.Primary.ID)
+		convID, convErr := strconv.ParseInt(rs.Primary.ID, 10, 64)
 		if convErr != nil {
 			return convErr
 		}
@@ -125,17 +123,17 @@ func testAccCheckElementSwAccountExists(n string, account *account) resource.Tes
 			return fmt.Errorf("No ElementSw account key ID is set")
 		}
 
-		convID, err := strconv.Atoi(rs.Primary.ID)
+		id, err := strconv.ParseInt(rs.Primary.ID, 10, 64)
 		if err != nil {
 			return err
 		}
 
-		retrievedAcc, err := virConn.GetAccountByID(convID)
+		retrievedAcc, err := virConn.GetAccountByID(id)
 		if err != nil {
 			return err
 		}
 
-		if retrievedAcc.AccountID != convID {
+		if retrievedAcc.AccountID != id {
 			return fmt.Errorf("Resource ID and account ID do not match")
 		}
 

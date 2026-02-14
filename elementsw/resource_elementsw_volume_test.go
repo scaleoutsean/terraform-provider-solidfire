@@ -8,10 +8,11 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/scaleoutsean/solidfire-go/sdk"
 )
 
 func TestVolume_basic(t *testing.T) {
-	var volume volume
+	var volume sdk.Volume
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -48,25 +49,19 @@ func testAccCheckElementSwVolumeDestroy(s *terraform.State) error {
 		if rs.Type != "elementsw_volume" {
 			continue
 		}
-		id, _ := strconv.Atoi(rs.Primary.ID)
-		i := make([]int, 1)
-		i[0] = id
-		volumeInput := listVolumesRequest{}
-		volumeInput.Volumes = i
-		// should return an empty list
-		retrievedVol, err := virConn.listVolumes(volumeInput)
-		if err != nil {
-			return err
-		}
-		if len(retrievedVol.Volumes) != 0 {
-			return fmt.Errorf("Error waiting for volume (%s) to be destroyed: %s", rs.Primary.ID, err)
+		id, _ := strconv.ParseInt(rs.Primary.ID, 10, 64)
+
+		// should return an error or nil volume
+		_, err := virConn.GetVolume(id)
+		if err == nil {
+			return fmt.Errorf("Error waiting for volume (%s) to be destroyed", rs.Primary.ID)
 		}
 	}
 
 	return nil
 }
 
-func testAccCheckElementSwVolumeExists(n string, volume *volume) resource.TestCheckFunc {
+func testAccCheckElementSwVolumeExists(n string, volume *sdk.Volume) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client)
 
@@ -79,21 +74,17 @@ func testAccCheckElementSwVolumeExists(n string, volume *volume) resource.TestCh
 			return fmt.Errorf("No ElementSw volume key ID is set")
 		}
 
-		id, _ := strconv.Atoi(rs.Primary.ID)
-		i := make([]int, 1)
-		i[0] = id
-		volumeInput := listVolumesRequest{}
-		volumeInput.Volumes = i
-		retrievedVol, err := virConn.listVolumes(volumeInput)
+		id, _ := strconv.ParseInt(rs.Primary.ID, 10, 64)
+		retrievedVol, err := virConn.GetVolume(id)
 		if err != nil {
 			return err
 		}
 
-		if retrievedVol.Volumes[0].VolumeID != volumeInput.Volumes[0] {
+		if retrievedVol.VolumeID != id {
 			return fmt.Errorf("Resource ID and volume ID do not match")
 		}
 
-		*volume = retrievedVol.Volumes[0]
+		*volume = *retrievedVol
 
 		return nil
 	}
@@ -102,18 +93,15 @@ func testAccCheckElementSwVolumeExists(n string, volume *volume) resource.TestCh
 const testAccCheckElementSwVolumeConfig = `
 resource "elementsw_volume" "terraform-acceptance-test-1" {
 	name = "%s"
-	account = "${elementsw_account.terraform-acceptance-test-1.id}"
+	account_id = elementsw_account.terraform-acceptance-test-1.id
 	total_size = "%s"
 	enable512e = "%s"
 	min_iops = "%s"
 	max_iops = "%s"
 	burst_iops = "%s"
-	attributes = ["proxmox", "key=value", "some_id=1"]
-	associate_with_qos_policy = true
-	qos_policy_id = 4
-	enable_snap_mirror_replication = false
-	fifo_size = "5"
-	min_fifo_size = "3"
+	attributes = {
+		foo = "bar"
+	}
 }
 resource "elementsw_account" "terraform-acceptance-test-1" {
 	username = "terraform-acceptance-test-volume"

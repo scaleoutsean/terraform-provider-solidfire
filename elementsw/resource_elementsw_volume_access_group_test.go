@@ -129,7 +129,7 @@ func testAccCheckElementSwVolumeAccessGroupExists(n string, volume *volumeAccess
 			return err
 		}
 
-		convID, err := strconv.Atoi(rs.Primary.ID)
+		convID, err := strconv.ParseInt(rs.Primary.ID, 10, 64)
 		if err != nil {
 			return err
 		}
@@ -190,4 +190,3 @@ resource "elementsw_account" "terraform-acceptance-test-1" {
 	username = "terraform-acceptance-test-vag"
 }
 `
-

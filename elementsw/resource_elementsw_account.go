@@ -88,7 +88,7 @@ func resourceElementSwAccountRead(d *schema.ResourceData, meta interface{}) erro
 	client := meta.(*Client)
 
 	id := d.Id()
-	convID, convErr := strconv.Atoi(id)
+	convID, convErr := strconv.ParseInt(id, 10, 64)
 
 	if convErr != nil {
 		return fmt.Errorf("id argument is required")
@@ -184,7 +184,7 @@ func resourceElementSwAccountExists(d *schema.ResourceData, meta interface{}) (b
 	client := meta.(*Client)
 
 	id := d.Id()
-	convID, convErr := strconv.Atoi(id)
+	convID, convErr := strconv.ParseInt(id, 10, 64)
 
 	if convErr != nil {
 		return false, fmt.Errorf("id argument is required")
