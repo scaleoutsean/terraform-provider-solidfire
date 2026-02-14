@@ -1,3 +1,5 @@
+[![Go](https://github.com/scaleoutsean/terraform-provider-solidfire/actions/workflows/go.yml/badge.svg)](https://github.com/scaleoutsean/terraform-provider-solidfire/actions/workflows/go.yml)
+
 <!-- TOC -->
 
 - [Terraform Provider SolidFire](#terraform-provider-solidfire)
@@ -32,17 +34,15 @@ For general information about Terraform, visit the [official website][tf-website
 [tf-website]: https://terraform.io/
 [tf-github]: https://github.com/hashicorp/terraform
 
-
 **NOTE:** 
 
-- This is a fork of NetApp-hosted "Terraform NetApp ElementSW Provider". 
-- This repository is not associated with NetApp. To help with disambiguation, "NetApp" has been removed from the name, and "SolidFire" is used in place of "ElementSW". Terraform NetApp ElementSW Provider itself is based on a code initially developed by the SolidFire team for use with internal projects. The provider plugin was refactored to be published and maintained. It is possible that changes from Terraform SolidFire Provider may be submitted upstream to Terraform NetApp ElementSW Provider, but it's been forked because my primary goal is to experiment with it and not aim for pull request submission to Terraform NetApp ElementSW Provider
+- This repository is not associated with NetApp. To help with disambiguation "SolidFire" is used in place of "ElementSW". 
 
-This provider was tested with SolidFire version 12.
+This provider is tested with SolidFire version 12.5. Newer versions that use 12.5 API endpoint ought to work fine as well.
 
 ## Naming Conventions
 
-SolidFire does not require resource names to be unique. They are considered as 'labels' and resources in SolidFire are uniquely identified by IDs (integers). However, these ids are not user friendly, and as they are generated on the fly, they make it difficult to track resources and automate.
+SolidFire does not require all resources' names to be unique. They are considered as 'labels' and resources in SolidFire are uniquely identified by IDs (integers). However, these ids are not user friendly, and as they are generated on the fly, they make it difficult to track resources and automate.
 
 This provider assumes that resource names are unique, and enforces it within its scope. This is not an issue if everything is managed through Terraform, but could raise conflicts if the rule is not respected outside of Terraform.
 
@@ -50,15 +50,8 @@ This provider assumes that resource names are unique, and enforces it within its
 
 The current version of this provider requires Terraform 1.5 to run.
 
-**TODO** Download the provider from [Terraform Registry](https://registry.terraform.io/) if you don't want to build it from source. Note that you need to run `terraform init` to fetch the provider before deploying.
-
-A how-to based on Terraform 1.5 and SolidFire 12.5 can be found in this repository.
-
 ### Provider Documentation
 
-**TODO** The provider is documented [here](https://registry.terraform.io/providers/NetApp/netapp-elementsw/latest/docs).
-
-Check the provider documentation for details on entering your connection information and how to get started with writing configuration SolidFire resources.
 
 ### Controlling the provider version
 
@@ -95,9 +88,9 @@ First, you will want to clone the repository to
 `$GOPATH/src/github.com/scaleoutsean/terraform-provider-solidfire`:
 
 ```sh
-mkdir -p $GOPATH/src/github.com/netapp
-cd $GOPATH/src/github.com/netapp
-git clone https://github.com/NetApp/terraform-provider-solidfire.git
+mkdir -p $GOPATH/src/github.com/scaleoutsean
+cd $GOPATH/src/github.com/scaleoutsean
+git clone https://github.com/scaleoutsean/terraform-provider-solidfire.git
 ```
 
 ### Running the Build
