@@ -1,48 +1,14 @@
 package elementsw
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strconv"
 
-	"encoding/json"
-
-	"github.com/fatih/structs"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/scaleoutsean/terraform-provider-solidfire/elementsw/element/jsonrpc"
+	"github.com/scaleoutsean/solidfire-go/sdk"
 )
-
-// CreateVolumeAccessGroupRequest the users input for creating an volume access group
-type CreateVolumeAccessGroupRequest struct {
-	Name       string      `structs:"name"`
-	Initiators []string    `structs:"initiators"`
-	Volumes    []int       `structs:"volumes"`
-	Attributes interface{} `structs:"attributes"`
-	ID         int         `structs:"id"`
-}
-
-// CreateVolumeAccessGroupResult the API results for creating an aaccess group
-type CreateVolumeAccessGroupResult struct {
-	VolumeAccessGroupID int `json:"volumeAccessGroupID"`
-	volumeAccessGroup
-}
-
-// DeleteVolumeAccessGroupRequest the user input for deleteing an volume access group
-type DeleteVolumeAccessGroupRequest struct {
-	VolumeAccessGroupID    int  `structs:"volumeAccessGroupID"`
-	DeleteOrphanInitiators bool `structs:"deleteOrphanInitiators"`
-	Force                  bool `structs:"force"`
-}
-
-// ModifyVolumeAccessGroupRequest the users input for modifying a colume access group
-type ModifyVolumeAccessGroupRequest struct {
-	VolumeAccessGroupID    int         `structs:"volumeAccessGroupID"`
-	Name                   string      `structs:"name"`
-	Attributes             interface{} `structs:"attributes"`
-	Initiators             []int       `structs:"initiators"`
-	DeleteOrphanInitiators bool        `structs:"deleteOrphanInitiators"`
-	Volumes                []int       `structs:"volumes"`
-}
 
 func resourceElementSwVolumeAccessGroup() *schema.Resource {
 	return &schema.Resource{
@@ -89,208 +55,116 @@ func resourceElementSwVolumeAccessGroupCreate(d *schema.ResourceData, meta inter
 	log.Printf("Creating volume access group: %#v", d)
 	client := meta.(*Client)
 
-	vag := CreateVolumeAccessGroupRequest{}
+	req := sdk.CreateVolumeAccessGroupRequest{}
 
 	if v, ok := d.GetOk("name"); ok {
-		vag.Name = v.(string)
-	} else {
-		return fmt.Errorf("name argument is required")
+		req.Name = v.(string)
 	}
 
 	if raw, ok := d.GetOk("volumes"); ok {
 		for _, v := range raw.([]interface{}) {
-			vag.Volumes = append(vag.Volumes, v.(int))
+			req.Volumes = append(req.Volumes, int64(v.(int)))
 		}
 	}
 
-	resp, err := createVolumeAccessGroup(client, vag)
-	if err != nil {
-		log.Print("Error creating volume access group")
-		return err
+	client.initOnce.Do(client.init)
+	res, sdkErr := client.sdkClient.CreateVolumeAccessGroup(context.TODO(), &req)
+	if sdkErr != nil {
+		return sdkErr
 	}
 
-	d.SetId(fmt.Sprintf("%v", resp.VolumeAccessGroupID))
-	log.Printf("Created volume access group: %v %v", vag.Name, resp.VolumeAccessGroupID)
-
+	d.SetId(fmt.Sprintf("%v", res.VolumeAccessGroupID))
 	return resourceElementSwVolumeAccessGroupRead(d, meta)
-}
-
-func createVolumeAccessGroup(client *Client, request CreateVolumeAccessGroupRequest) (CreateVolumeAccessGroupResult, error) {
-	params := structs.Map(request)
-
-	log.Printf("Parameters: %v", params)
-
-	response, err := client.CallAPIMethod("CreateVolumeAccessGroup", params)
-	if err != nil {
-		log.Print("CreateVolumeAccessGroup request failed")
-		return CreateVolumeAccessGroupResult{}, err
-	}
-
-	var result CreateVolumeAccessGroupResult
-	if err := json.Unmarshal([]byte(*response), &result); err != nil {
-		log.Print("Failed to unmarshall response from CreateVolumeAccessGroup")
-		return CreateVolumeAccessGroupResult{}, err
-	}
-	return result, nil
 }
 
 func resourceElementSwVolumeAccessGroupRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("Reading volume access group: %#v", d)
 	client := meta.(*Client)
 
-	vags := listVolumeAccessGroupsRequest{}
-
-	id := d.Id()
-	s := make([]int, 1)
-	convID, convErr := strconv.Atoi(id)
-
-	if convErr != nil {
-		return fmt.Errorf("id argument is required")
-	}
-
-	s[0] = convID
-	vags.VolumeAccessGroups = s
-
-	res, err := client.listVolumeAccessGroups(vags)
+	idStr := d.Id()
+	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		return err
 	}
 
-	if len(res.VolumeAccessGroupsNotFound) > 0 {
-		return fmt.Errorf("unable to find volume access groups with the id of %v", res.VolumeAccessGroupsNotFound)
+	req := sdk.ListVolumeAccessGroupsRequest{
+		VolumeAccessGroups: []int64{id},
+	}
+	client.initOnce.Do(client.init)
+	res, sdkErr := client.sdkClient.ListVolumeAccessGroups(context.TODO(), &req)
+	if sdkErr != nil {
+		return sdkErr
 	}
 
 	if len(res.VolumeAccessGroups) != 1 {
-		return fmt.Errorf("expected one volume access group to be found, response contained %v results", len(res.VolumeAccessGroups))
+		return fmt.Errorf("expected one volume access group")
 	}
 
-	d.Set("name", res.VolumeAccessGroups[0].Name)
-	d.Set("initiators", res.VolumeAccessGroups[0].Initiators)
-	d.Set("volumes", res.VolumeAccessGroups[0].Volumes)
+	vag := res.VolumeAccessGroups[0]
+	d.Set("name", vag.Name)
+	d.Set("initiators", vag.Initiators)
+	d.Set("volumes", vag.Volumes)
 
 	return nil
 }
 
 func resourceElementSwVolumeAccessGroupUpdate(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("Updating volume access group %#v", d)
 	client := meta.(*Client)
+	idStr := d.Id()
+	id, _ := strconv.ParseInt(idStr, 10, 64)
 
-	vag := ModifyVolumeAccessGroupRequest{}
-
-	id := d.Id()
-	convID, convErr := strconv.Atoi(id)
-
-	if convErr != nil {
-		return fmt.Errorf("id argument is required")
-	}
-	vag.VolumeAccessGroupID = convID
-
-	if v, ok := d.GetOk("name"); ok {
-		vag.Name = v.(string)
-
-	} else {
-		return fmt.Errorf("name argument is required during update")
+	req := sdk.ModifyVolumeAccessGroupRequest{
+		VolumeAccessGroupID: id,
 	}
 
-	if raw, ok := d.GetOk("volumes"); ok {
-		for _, v := range raw.([]interface{}) {
-			vag.Volumes = append(vag.Volumes, v.(int))
+	if d.HasChange("name") {
+		req.Name = d.Get("name").(string)
+	}
+
+	if d.HasChange("volumes") {
+		raw := d.Get("volumes").([]interface{})
+		for _, v := range raw {
+			req.Volumes = append(req.Volumes, int64(v.(int)))
 		}
-	} else {
-		return fmt.Errorf("expecting an array of volume ids to change")
 	}
 
-	err := modifyVolumeAccessGroup(client, vag)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func modifyVolumeAccessGroup(client *Client, request ModifyVolumeAccessGroupRequest) error {
-	params := structs.Map(request)
-
-	_, err := client.CallAPIMethod("ModifyVolumeAccessGroup", params)
-	if err != nil {
-		log.Print("ModifyVolumeAccessGroup request failed")
-		return err
-	}
-
-	return nil
+	client.initOnce.Do(client.init)
+	_, sdkErr := client.sdkClient.ModifyVolumeAccessGroup(context.TODO(), &req)
+	return sdkErr
 }
 
 func resourceElementSwVolumeAccessGroupDelete(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("Deleting volume access group: %#v", d)
 	client := meta.(*Client)
+	idStr := d.Id()
+	id, _ := strconv.ParseInt(idStr, 10, 64)
 
-	vag := DeleteVolumeAccessGroupRequest{}
-
-	id := d.Id()
-	convID, convErr := strconv.Atoi(id)
-
-	if convErr != nil {
-		return fmt.Errorf("id argument is required")
+	req := sdk.DeleteVolumeAccessGroupRequest{
+		VolumeAccessGroupID: id,
 	}
-	vag.VolumeAccessGroupID = convID
-
-	err := deleteVolumeAccessGroup(client, vag)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func deleteVolumeAccessGroup(client *Client, request DeleteVolumeAccessGroupRequest) error {
-	params := structs.Map(request)
-
-	_, err := client.CallAPIMethod("DeleteVolumeAccessGroup", params)
-	if err != nil {
-		log.Print("DeleteVolumeAccessGroup request failed")
-		return err
-	}
-
-	return nil
+	client.initOnce.Do(client.init)
+	_, sdkErr := client.sdkClient.DeleteVolumeAccessGroup(context.TODO(), &req)
+	return sdkErr
 }
 
 func resourceElementSwVolumeAccessGroupExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	log.Printf("Checking existence of volume access group: %#v", d)
 	client := meta.(*Client)
-
-	vags := listVolumeAccessGroupsRequest{}
-
-	id := d.Id()
-	s := make([]int, 1)
-	convID, convErr := strconv.Atoi(id)
-
-	if convErr != nil {
-		return false, fmt.Errorf("id argument is required")
-	}
-
-	s[0] = convID
-	vags.VolumeAccessGroups = s
-
-	res, err := client.listVolumeAccessGroups(vags)
+	idStr := d.Id()
+	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		if err, ok := err.(*jsonrpc.ResponseError); ok {
-			if err.Name == "xUnknown" {
-				d.SetId("")
-				return false, nil
-			}
+		return false, nil
+	}
+
+	req := sdk.ListVolumeAccessGroupsRequest{
+		VolumeAccessGroups: []int64{id},
+	}
+	client.initOnce.Do(client.init)
+	res, sdkErr := client.sdkClient.ListVolumeAccessGroups(context.TODO(), &req)
+	if sdkErr != nil {
+		if sdkErr.Detail == "500:xUnknown" {
+			return false, nil
 		}
-		return false, err
+		return false, sdkErr
 	}
 
-	if len(res.VolumeAccessGroupsNotFound) > 0 {
-		d.SetId("")
-		return false, nil
-	}
-
-	if len(res.VolumeAccessGroups) != 1 {
-		d.SetId("")
-		return false, nil
-	}
-
-	return true, nil
+	return len(res.VolumeAccessGroups) == 1, nil
 }

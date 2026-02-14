@@ -1,5 +1,7 @@
 terraform-solidfire-provider.code-workspace
 terraform-provider-solidfire
+.vscode/
+.vscode
 .github/
 .github
 examples/elementsw/terraform.tfstate*

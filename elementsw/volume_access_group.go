@@ -1,79 +1,46 @@
 package elementsw
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
-	"log"
 	"strconv"
 
-	"github.com/fatih/structs"
+	"github.com/scaleoutsean/solidfire-go/sdk"
 )
 
-type listVolumeAccessGroupsRequest struct {
-	VolumeAccessGroups []int `structs:"volumeAccessGroups"`
-}
-
-type listVolumeAccessGroupsResult struct {
-	VolumeAccessGroups         []volumeAccessGroup `json:"volumeAccessGroups"`
-	VolumeAccessGroupsNotFound []int               `json:"volumeAccessGroupsNotFound"`
-}
-
 type volumeAccessGroup struct {
-	VolumeAccessGroupID int      `json:"volumeAccessGroupID"`
+	VolumeAccessGroupID int64    `json:"volumeAccessGroupID"`
 	Name                string   `json:"name"`
 	Initiators          []string `json:"initiators"`
-	Volumes             []int    `json:"volumes"`
-	ID                  int      `json:"id"`
+	Volumes             []int64  `json:"volumes"`
+	ID                  int64    `json:"id"`
 }
 
 func (c *Client) getVolumeAccessGroupByID(id string) (volumeAccessGroup, error) {
-	convID, err := strconv.Atoi(id)
+	convID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		return volumeAccessGroup{}, err
 	}
 
-	vagIDs := make([]int, 1)
-	vagIDs[0] = convID
-
-	params := structs.Map(listVolumeAccessGroupsRequest{VolumeAccessGroups: vagIDs})
-
-	response, err := c.CallAPIMethod("ListVolumeAccessGroups", params)
-	if err != nil {
-		log.Print("ListVolumeAccessGroups request failed")
-		return volumeAccessGroup{}, err
+	req := sdk.ListVolumeAccessGroupsRequest{
+		VolumeAccessGroups: []int64{convID},
+	}
+	c.initOnce.Do(c.init)
+	res, sdkErr := c.sdkClient.ListVolumeAccessGroups(context.TODO(), &req)
+	if sdkErr != nil {
+		return volumeAccessGroup{}, sdkErr
 	}
 
-	var result listVolumeAccessGroupsResult
-	if err := json.Unmarshal([]byte(*response), &result); err != nil {
-		log.Print("Failed to unmarshal respone from ListVolumeAccessGroups")
-		return volumeAccessGroup{}, err
+	if len(res.VolumeAccessGroups) != 1 {
+		return volumeAccessGroup{}, fmt.Errorf("expected one volume access group to be found")
 	}
 
-	if len(result.VolumeAccessGroupsNotFound) > 0 {
-		return volumeAccessGroup{}, fmt.Errorf("unable to find volume access groups with the id of %v", result.VolumeAccessGroupsNotFound)
-	}
-
-	if len(result.VolumeAccessGroups) != 1 {
-		return volumeAccessGroup{}, fmt.Errorf("expected one volume access group to be found. response contained %v results", len(result.VolumeAccessGroups))
-	}
-
-	return result.VolumeAccessGroups[0], nil
-}
-
-func (c *Client) listVolumeAccessGroups(request listVolumeAccessGroupsRequest) (listVolumeAccessGroupsResult, error) {
-	params := structs.Map(request)
-
-	response, err := c.CallAPIMethod("ListVolumeAccessGroups", params)
-	if err != nil {
-		log.Print("ListVolumeAccessGroups request failed")
-		return listVolumeAccessGroupsResult{}, err
-	}
-
-	var result listVolumeAccessGroupsResult
-	if err := json.Unmarshal([]byte(*response), &result); err != nil {
-		log.Print("Failed to unmarshall response from ListVolumeAccessGroups")
-		return listVolumeAccessGroupsResult{}, err
-	}
-
-	return result, nil
+	vag := res.VolumeAccessGroups[0]
+	return volumeAccessGroup{
+		VolumeAccessGroupID: vag.VolumeAccessGroupID,
+		Name:                vag.Name,
+		Initiators:          vag.Initiators,
+		Volumes:             vag.Volumes,
+		ID:                  vag.VolumeAccessGroupID,
+	}, nil
 }

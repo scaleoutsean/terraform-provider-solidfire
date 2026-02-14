@@ -1,26 +1,13 @@
 package elementsw
 
 import (
-	"encoding/json"
-	"log"
+	"context"
 
-	"github.com/fatih/structs"
+	"github.com/scaleoutsean/solidfire-go/sdk"
 )
 
-type getAccountByIDRequest struct {
-	AccountID int `structs:"accountID"`
-}
-
-type getAccountByNameRequest struct {
-	AccountName string `structs:"username"`
-}
-
-type getAccountResult struct {
-	Account account `json:"account"`
-}
-
 type account struct {
-	AccountID       int         `json:"accountID"`
+	AccountID       int64       `json:"accountID"`
 	Attributes      interface{} `json:"attributes"`
 	InitiatorSecret string      `json:"initiatorSecret"`
 	Status          string      `json:"status"`
@@ -29,24 +16,55 @@ type account struct {
 }
 
 func (c *Client) GetAccountByID(id int) (account, error) {
-	   params := structs.Map(getAccountByIDRequest{AccountID: id})
-	   return c.GetAccountDetails(params, "GetAccountByID")
+	req := sdk.GetAccountByIDRequest{
+		AccountID: int64(id),
+	}
+	c.initOnce.Do(c.init)
+	res, sdkErr := c.sdkClient.GetAccountByID(context.TODO(), &req)
+	if sdkErr != nil {
+		return account{}, sdkErr
+	}
+
+	return c.processAccount(res.Account), nil
 }
 
+func (c *Client) GetAccountByName(name string) (account, error) {
+	req := sdk.GetAccountByNameRequest{
+		Username: name,
+	}
+	c.initOnce.Do(c.init)
+	res, sdkErr := c.sdkClient.GetAccountByName(context.TODO(), &req)
+	if sdkErr != nil {
+		return account{}, sdkErr
+	}
 
-func (c *Client) GetAccountDetails(params map[string]interface{}, method string) (account, error) {
-	   response, err := c.CallAPIMethod(method, params)
-	   if err != nil {
-			   log.Print(method + " request failed")
-			   return account{}, err
-	   }
-
-	   var result getAccountResult
-	   if err := json.Unmarshal([]byte(*response), &result); err != nil {
-			   log.Print("Failed to unmarshal response from GetAccountByID")
-			   return account{}, err
-	   }
-
-	   return result.Account, nil
+	return c.processAccount(res.Account), nil
 }
 
+func (c *Client) ListAccounts() ([]account, error) {
+	req := sdk.ListAccountsRequest{}
+	c.initOnce.Do(c.init)
+	res, sdkErr := c.sdkClient.ListAccounts(context.TODO(), &req)
+	if sdkErr != nil {
+		return nil, sdkErr
+	}
+
+	var accounts []account
+	for _, a := range res.Accounts {
+		accounts = append(accounts, c.processAccount(a))
+	}
+	return accounts, nil
+}
+
+func (c *Client) processAccount(sdkAccount sdk.Account) account {
+	// Security requirement: Always drop initiatorSecret and targetSecret from response
+	// to avoid exposing them in UI or logs.
+	return account{
+		AccountID:       sdkAccount.AccountID,
+		Attributes:      sdkAccount.Attributes,
+		InitiatorSecret: "", // Dropped for security
+		TargetSecret:    "", // Dropped for security
+		Status:          sdkAccount.Status,
+		Username:        sdkAccount.Username,
+	}
+}

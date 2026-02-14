@@ -1,7 +1,7 @@
-# Example: Replication
+# Example: Replication (Cluster and Volume Pairing)
 
 # 1. Pair Clusters
-resource "elementsw_replication_cluster" "dr_site" {
+resource "elementsw_cluster_pairing" "dr_site" {
   source_cluster {
     endpoint = "https://10.10.10.10/json-rpc/12.5"
     username = "admin"
@@ -17,12 +17,18 @@ resource "elementsw_replication_cluster" "dr_site" {
 # 2. Create Volume on Source
 resource "elementsw_volume" "primary" {
   name       = "primary-vol"
-  account_id = 1
+  account    = "admin" # assuming account name as per updated schema
   total_size = 1000000000
   enable512e = true
 }
 
 # 3. Enable Replication for Volume
-resource "elementsw_replication_volume" "dr_vol" {
+resource "elementsw_volume_pairing" "dr_vol" {
   volume_id = elementsw_volume.primary.id
+  target_cluster {
+    endpoint = "https://10.20.20.20/json-rpc/12.5"
+    username = "admin"
+    password = "password"
+  }
 }
+

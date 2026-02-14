@@ -1,180 +1,61 @@
 package elementsw
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
+	"context"
 
-	"github.com/fatih/structs"
+	"github.com/scaleoutsean/solidfire-go/sdk"
 )
 
-type modifyQoSPolicyRequest struct {
-	   QoSPolicyID int        `structs:"qosPolicyID"`
-	   Name        string     `structs:"name,omitempty"`
-	   QoS         qosDetails `structs:"qos"`
-}
-
-type modifyQoSPolicyResult struct {
-	   QoSPolicy qosPolicy `json:"qosPolicy"`
-}
-
-func (c *Client) ModifyQoSPolicy(request modifyQoSPolicyRequest) (modifyQoSPolicyResult, error) {
-	   // Validation (same as Create)
-	   if request.QoS.MinIOPS < 50 || request.QoS.MinIOPS > 15000 {
-			   return modifyQoSPolicyResult{}, fmt.Errorf("minIOPS must be 50-15000")
-	   }
-	   if request.QoS.MaxIOPS < 100 || request.QoS.MaxIOPS > 50000 || request.QoS.MaxIOPS <= request.QoS.MinIOPS {
-			   return modifyQoSPolicyResult{}, fmt.Errorf("maxIOPS must be 100-50000 and greater than minIOPS")
-	   }
-	   if request.QoS.BurstIOPS < 100 || request.QoS.BurstIOPS > 200000 || request.QoS.BurstIOPS <= request.QoS.MaxIOPS {
-			   return modifyQoSPolicyResult{}, fmt.Errorf("burstIOPS must be 100-200000 and greater than maxIOPS")
-	   }
-	   // Name is optional, but if present, must be 1-40 chars
-	   if len(request.Name) > 0 && (len(request.Name) < 1 || len(request.Name) > 40) {
-			   return modifyQoSPolicyResult{}, fmt.Errorf("name must be 1-40 alphanumeric characters if specified")
-	   }
-
-	   params := structs.Map(request)
-	   response, err := c.CallAPIMethod("ModifyQoSPolicy", params)
-	   if err != nil {
-			   log.Print("ModifyQoSPolicy request failed")
-			   return modifyQoSPolicyResult{}, err
-	   }
-
-	   var result modifyQoSPolicyResult
-	   if err := json.Unmarshal([]byte(*response), &result); err != nil {
-			   log.Print("Failed to unmarshall response from ModifyQoSPolicy")
-			   return modifyQoSPolicyResult{}, err
-	   }
-
-	   return result, nil
-}
-
-
-type deleteQoSPolicyRequest struct {
-	   QoSPolicyID int `structs:"qosPolicyID"`
-}
-
-type deleteQoSPolicyResult struct {
-	   // Empty result
-}
-
-func (c *Client) DeleteQoSPolicy(request deleteQoSPolicyRequest) (deleteQoSPolicyResult, error) {
-	   params := structs.Map(request)
-	   _, err := c.CallAPIMethod("DeleteQoSPolicy", params)
-	   if err != nil {
-			   log.Print("DeleteQoSPolicy request failed")
-			   return deleteQoSPolicyResult{}, err
-	   }
-
-	   // The result is always empty
-	   return deleteQoSPolicyResult{}, nil
-}
-
-type createQoSPolicyRequest struct {
-	Name string     `structs:"name"`
-	QoS  qosDetails `structs:"qos"`
-}
-
-type createQoSPolicyResult struct {
-	QoSPolicyID int `json:"qosPolicyID"`
-}
-
-func (c *Client) CreateQoSPolicy(request createQoSPolicyRequest) (createQoSPolicyResult, error) {
-	// Validation
-	if len(request.Name) < 1 || len(request.Name) > 40 {
-		return createQoSPolicyResult{}, fmt.Errorf("name must be 1-40 alphanumeric characters")
+func (c *Client) CreateQoSPolicy(name string, qos sdk.QoS) (int64, error) {
+	req := sdk.CreateQoSPolicyRequest{
+		Name: name,
+		Qos:  qos,
 	}
-	// Optionally, add regex for alphanumeric check
-	if request.QoS.MinIOPS < 50 || request.QoS.MinIOPS > 15000 {
-		return createQoSPolicyResult{}, fmt.Errorf("minIOPS must be 50-15000")
+	c.initOnce.Do(c.init)
+	res, sdkErr := c.sdkClient.CreateQoSPolicy(context.TODO(), &req)
+	if sdkErr != nil {
+		return 0, sdkErr
 	}
-	if request.QoS.MaxIOPS < 100 || request.QoS.MaxIOPS > 50000 || request.QoS.MaxIOPS <= request.QoS.MinIOPS {
-		return createQoSPolicyResult{}, fmt.Errorf("maxIOPS must be 100-50000 and greater than minIOPS")
-	}
-	if request.QoS.BurstIOPS < 100 || request.QoS.BurstIOPS > 200000 || request.QoS.BurstIOPS <= request.QoS.MaxIOPS {
-		return createQoSPolicyResult{}, fmt.Errorf("burstIOPS must be 100-200000 and greater than maxIOPS")
-	}
-
-	params := structs.Map(request)
-	response, err := c.CallAPIMethod("CreateQoSPolicy", params)
-	if err != nil {
-		log.Print("CreateQoSPolicy request failed")
-		return createQoSPolicyResult{}, err
-	}
-
-	var result createQoSPolicyResult
-	if err := json.Unmarshal([]byte(*response), &result); err != nil {
-		log.Print("Failed to unmarshall response from CreateQoSPolicy")
-		return createQoSPolicyResult{}, err
-	}
-
-	return result, nil
+	return res.QosPolicy.QosPolicyID, nil
 }
 
-type getQoSPolicyRequest struct {
-	QoSPolicyID int `structs:"qosPolicyID"`
-}
-
-type getQoSPolicyResult struct {
-	QoSPolicy qosPolicy `json:"qosPolicy"`
-}
-
-func (c *Client) GetQoSPolicy(request getQoSPolicyRequest) (getQoSPolicyResult, error) {
-	params := structs.Map(request)
-	response, err := c.CallAPIMethod("GetQoSPolicy", params)
-	if err != nil {
-		log.Print("GetQoSPolicy request failed")
-		return getQoSPolicyResult{}, err
+func (c *Client) GetQoSPolicy(id int64) (*sdk.QoSPolicy, error) {
+	req := sdk.GetQoSPolicyRequest{
+		QosPolicyID: id,
 	}
-
-	var result getQoSPolicyResult
-	if err := json.Unmarshal([]byte(*response), &result); err != nil {
-		log.Print("Failed to unmarshall response from GetQoSPolicy")
-		return getQoSPolicyResult{}, err
+	c.initOnce.Do(c.init)
+	res, sdkErr := c.sdkClient.GetQoSPolicy(context.TODO(), &req)
+	if sdkErr != nil {
+		return nil, sdkErr
 	}
-
-	return result, nil
+	return &res.QosPolicy, nil
 }
 
-type listQoSPoliciesRequest struct {
-	// No parameters for ListQoSPolicies
-}
-
-type qosPolicy struct {
-	Name        string     `json:"name"`
-	QoS         qosDetails `json:"qos"`
-	QoSPolicyID int        `json:"qosPolicyID"`
-	VolumeIDs   []int      `json:"volumeIDs"`
-}
-
-type listQoSPoliciesResult struct {
-	QoSPolicies []qosPolicy `json:"qosPolicies"`
-}
-
-func (c *Client) ListQoSPolicies(request listQoSPoliciesRequest) (listQoSPoliciesResult, error) {
-	params := structs.Map(request)
-	response, err := c.CallAPIMethod("ListQoSPolicies", params)
-	if err != nil {
-		log.Print("ListQoSPolicies request failed")
-		return listQoSPoliciesResult{}, err
+func (c *Client) ModifyQoSPolicy(id int64, name string, qos sdk.QoS) error {
+	req := sdk.ModifyQoSPolicyRequest{
+		QosPolicyID: id,
+		Name:        name,
+		Qos:         qos,
 	}
-
-	var result listQoSPoliciesResult
-	if err := json.Unmarshal([]byte(*response), &result); err != nil {
-		log.Print("Failed to unmarshall response from ListQoSPolicies")
-		return listQoSPoliciesResult{}, err
-	}
-
-	return result, nil
+	c.initOnce.Do(c.init)
+	_, sdkErr := c.sdkClient.ModifyQoSPolicy(context.TODO(), &req)
+	return sdkErr
 }
 
-type qosCurve map[string]int
+func (c *Client) DeleteQoSPolicy(id int64) error {
+	req := sdk.DeleteQoSPolicyRequest{
+		QosPolicyID: id,
+	}
+	c.initOnce.Do(c.init)
+	_, sdkErr := c.sdkClient.DeleteQoSPolicy(context.TODO(), &req)
+	return sdkErr
+}
 
-type qosDetails struct {
-	BurstIOPS int      `json:"burstIOPS"`
-	BurstTime int      `json:"burstTime"`
-	Curve     qosCurve `json:"curve"`
-	MaxIOPS   int      `json:"maxIOPS"`
-	MinIOPS   int      `json:"minIOPS"`
+func (c *Client) ListQoSPolicies() ([]sdk.QoSPolicy, error) {
+	c.initOnce.Do(c.init)
+	res, sdkErr := c.sdkClient.ListQoSPolicies(context.TODO())
+	if sdkErr != nil {
+		return nil, sdkErr
+	}
+	return res.QosPolicies, nil
 }

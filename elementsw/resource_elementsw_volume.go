@@ -1,78 +1,14 @@
 package elementsw
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strconv"
 
-	"encoding/json"
-
-	"github.com/fatih/structs"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/scaleoutsean/terraform-provider-solidfire/elementsw/element/jsonrpc"
+	"github.com/scaleoutsean/solidfire-go/sdk"
 )
-
-// validateVolumeAttributes enforces max 10 KV pairs and max 1000 bytes JSON
-func validateVolumeAttributes(val interface{}, key string) (warns []string, errs []error) {
-	   m, ok := val.(map[string]interface{})
-	   if !ok {
-			   errs = append(errs, fmt.Errorf("attributes must be a map of string to string"))
-			   return
-	   }
-	   if len(m) > 10 {
-			   errs = append(errs, fmt.Errorf("attributes cannot have more than 10 key-value pairs"))
-	   }
-	   // Convert to JSON and check size
-	   b, err := json.Marshal(m)
-	   if err != nil {
-			   errs = append(errs, fmt.Errorf("attributes could not be JSON encoded: %v", err))
-	   } else if len(b) > 1000 {
-			   errs = append(errs, fmt.Errorf("attributes JSON encoding exceeds 1000 bytes (actual: %d)", len(b)))
-	   }
-   return
-}
-// CreateVolumeRequest the users input for creating a Volume
-type CreateVolumeRequest struct {
-	   Name                    string           `structs:"name"`
-	   AccountID               int              `structs:"accountID"`
-	   TotalSize               int              `structs:"totalSize"`
-	   Enable512E              bool             `structs:"enable512e"`
-	   Attributes              interface{}      `structs:"attributes"`
-	   QOS                     QualityOfService `structs:"qos,omitempty"`
-	   QoSPolicyID             int              `structs:"qosPolicyID,omitempty"`
-	   AssociateWithQoSPolicy  bool             `structs:"associateWithQoSPolicy,omitempty"`
-	   EnableSnapMirrorReplication bool          `structs:"enableSnapMirrorReplication,omitempty"`
-	   FifoSize                string           `structs:"fifoSize,omitempty"`
-	   MinFifoSize             string           `structs:"minFifoSize,omitempty"`
-}
-
-// CreateVolumeResult the api results for creating a volume
-type CreateVolumeResult struct {
-	   VolumeID   int    `json:"volumeID"`
-	   Volume     volume `json:"volume"`
-	   QoSPolicyID *int  `json:"qosPolicyID"`
-}
-
-// DeleteVolumeRequest the user input for deleteing a volume
-type DeleteVolumeRequest struct {
-	VolumeID int `structs:"volumeID"`
-}
-
-// ModifyVolumeRequest the user input for modify a volume
-type ModifyVolumeRequest struct {
-	VolumeID   int              `structs:"volumeID"`
-	AccountID  int              `structs:"accountID"`
-	Attributes interface{}      `structs:"attributes"`
-	QOS        QualityOfService `structs:"qos"`
-	TotalSize  int              `structs:"totalSize"`
-}
-
-// QualityOfService quailty of service information
-type QualityOfService struct {
-	MinIOPS   int `structs:"minIOPS"`
-	MaxIOPS   int `structs:"maxIOPS"`
-	BurstIOPS int `structs:"burstIOPS"`
-}
 
 func resourceElementSwVolume() *schema.Resource {
 	return &schema.Resource{
@@ -92,7 +28,12 @@ func resourceElementSwVolume() *schema.Resource {
 			},
 			"account": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+			},
+			"account_id": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Computed: true, // we might resolve name to ID
 			},
 			"total_size": {
 				Type:     schema.TypeInt,
@@ -114,12 +55,15 @@ func resourceElementSwVolume() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
-		   "attributes": {
-			   Type:     schema.TypeMap,
-			   Optional: true,
-			   Elem:     &schema.Schema{Type: schema.TypeString},
-			   ValidateFunc: validateVolumeAttributes,
-		   },
+			"qos_policy_id": {
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			"attributes": {
+				Type:     schema.TypeMap,
+				Optional: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
 			"iqn": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -129,279 +73,137 @@ func resourceElementSwVolume() *schema.Resource {
 }
 
 func resourceElementSwVolumeCreate(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("Creating volume: %#v", d)
 	client := meta.(*Client)
 
-	volume := CreateVolumeRequest{}
-
-	if v, ok := d.GetOk("name"); ok {
-		volume.Name = v.(string)
+	// Resolve account name to ID if needed
+	accountID := int64(0)
+	if v, ok := d.GetOk("account"); ok {
+		acc, err := client.GetAccountByName(v.(string))
+		if err != nil {
+			return fmt.Errorf("failed to find account %s: %w", v.(string), err)
+		}
+		accountID = acc.AccountID
+	} else if v, ok := d.GetOk("account_id"); ok {
+		accountID = int64(v.(int))
 	} else {
-		return fmt.Errorf("name argument is required")
+		return fmt.Errorf("either account or account_id must be provided")
 	}
 
-	   if a, ok := d.GetOk("account_id"); ok {
-			   accountID, ok := a.(int)
-			   if !ok {
-					   return fmt.Errorf("account_id must be an integer")
-			   }
-			   volume.AccountID = accountID
-	   } else {
-			   return fmt.Errorf("account_id argument is required")
-	   }
+	req := sdk.CreateVolumeRequest{
+		Name:       d.Get("name").(string),
+		AccountID:  accountID,
+		TotalSize:  int64(d.Get("total_size").(int)),
+		Enable512e: d.Get("enable512e").(bool),
+	}
 
-	if v, ok := d.GetOk("total_size"); ok {
-		volume.TotalSize = v.(int)
+	if v, ok := d.GetOk("qos_policy_id"); ok {
+		req.QosPolicyID = int64(v.(int))
 	} else {
-		return fmt.Errorf("total_size argument is required")
+		req.Qos = sdk.QoS{
+			MinIOPS:   int64(d.Get("min_iops").(int)),
+			MaxIOPS:   int64(d.Get("max_iops").(int)),
+			BurstIOPS: int64(d.Get("burst_iops").(int)),
+		}
 	}
 
-	if v, ok := d.GetOkExists("enable512e"); ok {
-		volume.Enable512E = v.(bool)
-	} else {
-		return fmt.Errorf("enable512e argument is required")
+	// Attributes
+	if v, ok := d.GetOk("attributes"); ok {
+		req.Attributes = v.(map[string]interface{})
 	}
 
-	   if v, ok := d.GetOk("min_iops"); ok {
-			   volume.QOS.MinIOPS = v.(int)
-	   }
-
-	   if v, ok := d.GetOk("max_iops"); ok {
-			   volume.QOS.MaxIOPS = v.(int)
-	   }
-
-	   if v, ok := d.GetOk("burst_iops"); ok {
-			   volume.QOS.BurstIOPS = v.(int)
-	   }
-
-	   if v, ok := d.GetOk("attributes"); ok {
-			   // Validate again at runtime (defensive)
-			   if warns, errs := validateVolumeAttributes(v, "attributes"); len(errs) > 0 {
-					   return fmt.Errorf("invalid attributes: %v", errs)
-			   } else if len(warns) > 0 {
-					   log.Printf("attributes validation warning: %v", warns)
-			   }
-			   volume.Attributes = v
-	   }
-
-	resp, err := createVolume(client, volume)
-	if err != nil {
-		log.Print("Error creating volume")
-		return err
+	client.initOnce.Do(client.init)
+	resp, sdkErr := client.sdkClient.CreateVolume(context.TODO(), &req)
+	if sdkErr != nil {
+		return fmt.Errorf("CreateVolume failed: %s", sdkErr.Detail)
 	}
 
-	d.SetId(fmt.Sprintf("%v", resp.VolumeID))
-	d.Set("iqn", resp.Volume.Iqn)
-	log.Printf("Created volume: %v %v", volume.Name, resp.VolumeID)
-
+	d.SetId(fmt.Sprintf("%d", resp.VolumeID))
 	return resourceElementSwVolumeRead(d, meta)
 }
 
-func createVolume(client *Client, request CreateVolumeRequest) (CreateVolumeResult, error) {
-	   params := structs.Map(request)
-
-	   // Remove qos if qosPolicyID is set and associateWithQoSPolicy is true
-	   if request.QoSPolicyID > 0 && request.AssociateWithQoSPolicy {
-			   delete(params, "qos")
-	   }
-
-	   log.Printf("Parameters: %v", params)
-
-	   response, err := client.CallAPIMethod("CreateVolume", params)
-	   if err != nil {
-			   log.Print("CreateVolume request failed")
-			   return CreateVolumeResult{}, err
-	   }
-
-	   var result CreateVolumeResult
-	   if err := json.Unmarshal([]byte(*response), &result); err != nil {
-			   log.Print("Failed to unmarshall response from CreateVolume")
-			   return CreateVolumeResult{}, err
-	   }
-	   return result, nil
-}
-
 func resourceElementSwVolumeRead(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("Reading volume: %#v", d)
 	client := meta.(*Client)
+	id, _ := strconv.ParseInt(d.Id(), 10, 64)
 
-	volumes := listVolumesRequest{}
-
-	id := d.Id()
-	s := make([]int, 1)
-	convID, convErr := strconv.Atoi(id)
-
-	if convErr != nil {
-		return fmt.Errorf("id argument is required")
-	}
-
-	s[0] = convID
-	volumes.Volumes = s
-
-	res, err := client.listVolumes(volumes)
+	vol, err := client.GetVolume(id)
 	if err != nil {
 		return err
 	}
 
-	if len(res.Volumes) != 1 {
-	   return fmt.Errorf("expected one volume to be found. response contained %v results", len(res.Volumes))
+	d.Set("name", vol.Name)
+	d.Set("account_id", int(vol.AccountID))
+	d.Set("total_size", int(vol.TotalSize))
+	d.Set("enable512e", vol.Enable512e)
+	d.Set("iqn", vol.Iqn)
+	if vol.QosPolicyID != 0 {
+		d.Set("qos_policy_id", int(vol.QosPolicyID))
+	} else {
+		d.Set("min_iops", int(vol.Qos.MinIOPS))
+		d.Set("max_iops", int(vol.Qos.MaxIOPS))
+		d.Set("burst_iops", int(vol.Qos.BurstIOPS))
 	}
-
-	d.Set("name", res.Volumes[0].Name)
-
+	// Attributes...
 	return nil
 }
 
 func resourceElementSwVolumeUpdate(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("Updating volume access group %#v", d)
 	client := meta.(*Client)
+	id, _ := strconv.ParseInt(d.Id(), 10, 64)
 
-	volume := ModifyVolumeRequest{}
-
-	id := d.Id()
-	convID, convErr := strconv.Atoi(id)
-
-	if convErr != nil {
-		return fmt.Errorf("id argument is required")
-	}
-	volume.VolumeID = convID
-
-	   if a, ok := d.GetOk("account_id"); ok {
-			   accountID, ok := a.(int)
-			   if !ok {
-					   return fmt.Errorf("account_id must be an integer")
-			   }
-			   volume.AccountID = accountID
-	   } else {
-			   return fmt.Errorf("account_id argument is required")
-	   }
-
-	if v, ok := d.GetOk("total_size"); ok {
-		volume.TotalSize = v.(int)
+	req := sdk.ModifyVolumeRequest{
+		VolumeID: id,
 	}
 
-	   if v, ok := d.GetOk("min_iops"); ok {
-			   volume.QOS.MinIOPS = v.(int)
-	   }
-
-	   if v, ok := d.GetOk("max_iops"); ok {
-			   volume.QOS.MaxIOPS = v.(int)
-	   }
-
-	   if v, ok := d.GetOk("burst_iops"); ok {
-			   volume.QOS.BurstIOPS = v.(int)
-	   }
-
-	   if v, ok := d.GetOk("attributes"); ok {
-			   if warns, errs := validateVolumeAttributes(v, "attributes"); len(errs) > 0 {
-					   return fmt.Errorf("invalid attributes: %v", errs)
-			   } else if len(warns) > 0 {
-					   log.Printf("attributes validation warning: %v", warns)
-			   }
-			   volume.Attributes = v
-	   }
-
-	err := updateVolume(client, volume)
-	if err != nil {
-		return err
+	if d.HasChange("total_size") {
+		req.TotalSize = int64(d.Get("total_size").(int))
+	}
+	if d.HasChange("qos_policy_id") {
+		req.QosPolicyID = int64(d.Get("qos_policy_id").(int))
+	} else if d.HasChange("min_iops") || d.HasChange("max_iops") || d.HasChange("burst_iops") {
+		req.Qos = sdk.QoS{
+			MinIOPS:   int64(d.Get("min_iops").(int)),
+			MaxIOPS:   int64(d.Get("max_iops").(int)),
+			BurstIOPS: int64(d.Get("burst_iops").(int)),
+		}
 	}
 
-	return nil
-}
-
-func updateVolume(client *Client, request ModifyVolumeRequest) error {
-	params := structs.Map(request)
-
-	_, err := client.CallAPIMethod("ModifyVolume", params)
-	if err != nil {
-		log.Print("ModifyVolume request failed")
-		return err
+	client.initOnce.Do(client.init)
+	_, sdkErr := client.sdkClient.ModifyVolume(context.TODO(), &req)
+	if sdkErr != nil {
+		return fmt.Errorf("ModifyVolume failed: %s", sdkErr.Detail)
 	}
 
-	return nil
+	return resourceElementSwVolumeRead(d, meta)
 }
 
 func resourceElementSwVolumeDelete(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("Deleting volume access group: %#v", d)
 	client := meta.(*Client)
+	id, _ := strconv.ParseInt(d.Id(), 10, 64)
 
-	volume := DeleteVolumeRequest{}
-
-	id := d.Id()
-	convID, convErr := strconv.Atoi(id)
-
-	if convErr != nil {
-		return fmt.Errorf("id argument is required")
-	}
-	volume.VolumeID = convID
-
-	deleteErr := deleteVolume(client, volume)
-	if deleteErr != nil {
-		return deleteErr
+	client.initOnce.Do(client.init)
+	_, sdkErr := client.sdkClient.DeleteVolume(context.TODO(), &sdk.DeleteVolumeRequest{VolumeID: id})
+	if sdkErr != nil {
+		return fmt.Errorf("DeleteVolume failed: %s", sdkErr.Detail)
 	}
 
-	purgeErr := purgeDeletedVolume(client, volume)
-	if purgeErr != nil {
-		return purgeErr
+	_, sdkErr = client.sdkClient.PurgeDeletedVolume(context.TODO(), &sdk.PurgeDeletedVolumeRequest{VolumeID: id})
+	if sdkErr != nil {
+		log.Printf("[WARN] PurgeDeletedVolume failed for %d: %s", id, sdkErr.Detail)
 	}
 
-	return nil
-}
-
-func deleteVolume(client *Client, request DeleteVolumeRequest) error {
-	params := structs.Map(request)
-
-	_, err := client.CallAPIMethod("DeleteVolume", params)
-	if err != nil {
-		log.Print("DeleteVolume request failed")
-		return err
-	}
-
-	return nil
-}
-
-func purgeDeletedVolume(client *Client, request DeleteVolumeRequest) error {
-	params := structs.Map(request)
-
-	_, err := client.CallAPIMethod("PurgeDeletedVolume", params)
-	if err != nil {
-		log.Print("PurgeDeletedVolume request failed")
-		return err
-	}
-
+	d.SetId("")
 	return nil
 }
 
 func resourceElementSwVolumeExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	log.Printf("Checking existence of volume: %#v", d)
 	client := meta.(*Client)
-
-	volumes := listVolumesRequest{}
-
-	id := d.Id()
-	s := make([]int, 1)
-	convID, convErr := strconv.Atoi(id)
-
-	if convErr != nil {
-		return false, fmt.Errorf("id argument is required")
-	}
-
-	s[0] = convID
-	volumes.Volumes = s
-
-	res, err := client.listVolumes(volumes)
+	id, err := strconv.ParseInt(d.Id(), 10, 64)
 	if err != nil {
-		if err, ok := err.(*jsonrpc.ResponseError); ok {
-			if err.Name == "xUnknown" {
-				d.SetId("")
-				return false, nil
-			}
-		}
-		return false, err
+		return false, nil
 	}
 
-	if len(res.Volumes) != 1 {
-		d.SetId("")
+	_, err = client.GetVolume(id)
+	if err != nil {
 		return false, nil
 	}
 

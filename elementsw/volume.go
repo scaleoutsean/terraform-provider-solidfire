@@ -1,59 +1,44 @@
 package elementsw
 
 import (
-	"encoding/json"
-	"log"
+	"context"
+	"fmt"
 
-	"github.com/fatih/structs"
+	"github.com/scaleoutsean/solidfire-go/sdk"
 )
 
-
-type listVolumesRequest struct {
-	Volumes               []int `structs:"volumeIDs"`
-	IncludeVirtualVolumes bool  `structs:"includeVirtualVolumes"`
+func (c *Client) ListVolumes(volumeIDs []int64) ([]sdk.Volume, error) {
+	req := sdk.ListVolumesRequest{}
+	if len(volumeIDs) > 0 {
+		req.VolumeIDs = volumeIDs
+	}
+	c.initOnce.Do(c.init)
+	res, sdkErr := c.sdkClient.ListVolumes(context.TODO(), &req)
+	if sdkErr != nil {
+		return nil, sdkErr
+	}
+	return res.Volumes, nil
 }
 
-type listVolumesResult struct {
-	Volumes []volume `json:"volumes"`
-}
-
-
-// listVolumesByAccountIDRequest is used to list volumes for a given account and volume ID.
-type listVolumesByAccountIDRequest struct {
-	Accounts []int `structs:"accounts"`
-}
-
-type volume struct {
-	Name     string `json:"name"`
-	VolumeID int    `json:"volumeID"`
-	Iqn      string `json:"iqn"`
-}
-
-func (c *Client) listVolumesByVolumeID(request listVolumesByAccountIDRequest) (listVolumesResult, error) {
-	params := structs.Map(request)
-	return c.getVolumesDetails(params)
-}
-
-
-func (c *Client) listVolumes(request listVolumesRequest) (listVolumesResult, error) {
-	params := structs.Map(request)
-	return c.getVolumesDetails(params)
-}
-
-func (c *Client) getVolumesDetails(params map[string]interface{}) (listVolumesResult, error) {
-
-	response, err := c.CallAPIMethod("ListVolumes", params)
+func (c *Client) GetVolume(volumeID int64) (*sdk.Volume, error) {
+	vols, err := c.ListVolumes([]int64{volumeID})
 	if err != nil {
-		log.Print("ListVolumes request failed")
-		return listVolumesResult{}, err
+		return nil, err
 	}
-
-	var result listVolumesResult
-	if err := json.Unmarshal([]byte(*response), &result); err != nil {
-		log.Print("Failed to unmarshall response from ListVolumes")
-		return listVolumesResult{}, err
+	if len(vols) == 0 {
+		return nil, fmt.Errorf("volume %d not found", volumeID)
 	}
-
-	return result, nil
+	return &vols[0], nil
 }
 
+func (c *Client) ListVolumesForAccount(accountID int64) ([]sdk.Volume, error) {
+	req := sdk.ListVolumesForAccountRequest{
+		AccountID: accountID,
+	}
+	c.initOnce.Do(c.init)
+	res, sdkErr := c.sdkClient.ListVolumesForAccount(context.TODO(), &req)
+	if sdkErr != nil {
+		return nil, sdkErr
+	}
+	return res.Volumes, nil
+}

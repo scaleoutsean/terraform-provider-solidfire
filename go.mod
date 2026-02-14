@@ -1,16 +1,14 @@
 module github.com/scaleoutsean/terraform-provider-solidfire
 
-go 1.23.0
-
-toolchain go1.23.3
+go 1.25
 
 require (
 	github.com/fatih/structs v1.1.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.30.0
+	github.com/scaleoutsean/solidfire-go v0.0.1
 	github.com/sirupsen/logrus v1.7.0
 	github.com/stretchr/testify v1.10.0
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
-	gopkg.in/h2non/gock.v1 v1.0.15
 )
 
 require (
@@ -22,7 +20,6 @@ require (
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-checkpoint v0.5.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect

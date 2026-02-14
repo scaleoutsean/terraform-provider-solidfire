@@ -77,6 +77,6 @@ The following arguments are used to configure the ElementSW Provider:
 
 ## Required Privileges
 
-These settings were tested with NetApp ElementSW (Element OS, SolidFire) 11.7.
+These settings were tested with NetApp ElementSW (Element OS, SolidFire) 12.5.
 For additional information on roles and permissions, please refer to official
 ElementSW documentation.

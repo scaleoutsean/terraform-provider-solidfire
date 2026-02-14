@@ -1,91 +1,48 @@
 package elementsw
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
-	"log"
 	"strconv"
 
-	"github.com/fatih/structs"
+	"github.com/scaleoutsean/solidfire-go/sdk"
 )
 
-type listInitiatorRequest struct {
-	Initiators []int `structs:"initiators"`
-}
-
-type listInitiatorResult struct {
-	Initiators []initiatorResponse `json:"initiators"`
-}
-
 type initiator struct {
-	Name                string      `structs:"name,omitempty"`
-	Alias               string      `structs:"alias,omitempty"`
-	Attributes          interface{} `structs:"attributes,omitempty"`
-	VolumeAccessGroupID int         `structs:"volumeAccessGroupID,omitempty"`
-	InitiatorID         int         `structs:"initiatorID,omitempty"`
-}
-
-type initiatorResponse struct {
-	Name               string      `json:"initiatorName"`
-	Alias              string      `json:"alias"`
-	Attributes         interface{} `json:"attributes"`
-	ID                 int         `json:"initiatorID"`
-	VolumeAccessGroups []int       `json:"volumeAccessGroups"`
+	Name                string      `json:"name"`
+	Alias               string      `json:"alias"`
+	Attributes          interface{} `json:"attributes"`
+	VolumeAccessGroupID int64       `json:"volumeAccessGroupID"`
+	InitiatorID         int64       `json:"initiatorID"`
 }
 
 func (c *Client) getInitiatorByID(id string) (initiator, error) {
-	convID, err := strconv.Atoi(id)
+	convID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		return initiator{}, err
 	}
 
-	initID := make([]int, 1)
-	initID[0] = convID
-
-	params := structs.Map(listInitiatorRequest{Initiators: initID})
-
-	response, err := c.CallAPIMethod("ListInitiators", params)
-	if err != nil {
-		log.Print("ListInitiators request failed")
-		return initiator{}, err
+	req := sdk.ListInitiatorsRequest{
+		Initiators: []int64{convID},
+	}
+	c.initOnce.Do(c.init)
+	res, sdkErr := c.sdkClient.ListInitiators(context.TODO(), &req)
+	if sdkErr != nil {
+		return initiator{}, sdkErr
 	}
 
-	var result listInitiatorResult
-	if err := json.Unmarshal([]byte(*response), &result); err != nil {
-		log.Print("Failed to unmarshal response from ListInitiators")
-		return initiator{}, err
+	if len(res.Initiators) != 1 {
+		return initiator{}, fmt.Errorf("expected one initiator to be found. response contained %v results", len(res.Initiators))
 	}
 
-	if len(result.Initiators) != 1 {
-		return initiator{}, fmt.Errorf("expected one initiator to be found. response contained %v results", len(result.Initiators))
+	var init initiator
+	init.Name = res.Initiators[0].InitiatorName
+	init.Alias = res.Initiators[0].Alias
+	init.Attributes = res.Initiators[0].Attributes
+	init.InitiatorID = res.Initiators[0].InitiatorID
+	if len(res.Initiators[0].VolumeAccessGroups) > 0 {
+		init.VolumeAccessGroupID = res.Initiators[0].VolumeAccessGroups[0]
 	}
 
-	var initiator initiator
-	initiator.Name = result.Initiators[0].Name
-	initiator.Alias = result.Initiators[0].Alias
-	initiator.Attributes = result.Initiators[0].Attributes
-	initiator.InitiatorID = result.Initiators[0].ID
-	if len(result.Initiators[0].VolumeAccessGroups) == 1 {
-		initiator.VolumeAccessGroupID = result.Initiators[0].VolumeAccessGroups[0]
-	}
-
-	return initiator, nil
-}
-
-func (c *Client) listInitiators(request listInitiatorRequest) (listInitiatorResult, error) {
-	params := structs.Map(request)
-
-	response, err := c.CallAPIMethod("ListInitiators", params)
-	if err != nil {
-		log.Print("ListInitiators request failed")
-		return listInitiatorResult{}, err
-	}
-
-	var result listInitiatorResult
-	if err := json.Unmarshal([]byte(*response), &result); err != nil {
-		log.Print("Failed to unmarshall response from ListInitiators")
-		return listInitiatorResult{}, err
-	}
-
-	return result, nil
+	return init, nil
 }

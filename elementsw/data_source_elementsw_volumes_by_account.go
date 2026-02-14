@@ -24,18 +24,18 @@ func dataSourceElementswVolumesByAccount() *schema.Resource {
 }
 
 func dataSourceElementswVolumesByAccountRead(d *schema.ResourceData, meta interface{}) error {
-   client := meta.(*Client)
-   accountID := d.Get("account_id").(int)
-   req := listVolumesByAccountIDRequest{Accounts: []int{accountID}}
-   result, err := client.listVolumesByVolumeID(req)
-   if err != nil {
-	   return fmt.Errorf("failed to list volumes for account: %w", err)
-   }
-   var ids []int
-   for _, v := range result.Volumes {
-	   ids = append(ids, v.VolumeID)
-   }
-   d.SetId(fmt.Sprintf("%d", accountID))
-   d.Set("volume_ids", ids)
-   return nil
+	client := meta.(*Client)
+	accountID := int64(d.Get("account_id").(int))
+
+	volumes, err := client.ListVolumesForAccount(accountID)
+	if err != nil {
+		return fmt.Errorf("failed to list volumes for account: %w", err)
+	}
+	var ids []int64
+	for _, v := range volumes {
+		ids = append(ids, v.VolumeID)
+	}
+	d.SetId(fmt.Sprintf("%d", accountID))
+	d.Set("volume_ids", ids)
+	return nil
 }

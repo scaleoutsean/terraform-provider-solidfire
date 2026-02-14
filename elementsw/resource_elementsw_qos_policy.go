@@ -2,8 +2,10 @@ package elementsw
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/scaleoutsean/solidfire-go/sdk"
 )
 
 func resourceElementswQoSPolicy() *schema.Resource {
@@ -70,45 +72,39 @@ func resourceElementswQoSPolicyCreate(d *schema.ResourceData, meta interface{}) 
 		return fmt.Errorf("qos block must be provided")
 	}
 	qosMap := qosList[0].(map[string]interface{})
-	qos := qosDetails{
-		MinIOPS:   qosMap["min_iops"].(int),
-		MaxIOPS:   qosMap["max_iops"].(int),
-		BurstIOPS: qosMap["burst_iops"].(int),
-		BurstTime: qosMap["burst_time"].(int),
-		Curve:     map[string]int{}, // Curve can be set if needed
+	qos := sdk.QoS{
+		MinIOPS:   int64(qosMap["min_iops"].(int)),
+		MaxIOPS:   int64(qosMap["max_iops"].(int)),
+		BurstIOPS: int64(qosMap["burst_iops"].(int)),
 	}
-	req := createQoSPolicyRequest{Name: name, QoS: qos}
-	result, err := client.CreateQoSPolicy(req)
+
+	qosPolicyID, err := client.CreateQoSPolicy(name, qos)
 	if err != nil {
 		return err
 	}
-	d.SetId(fmt.Sprintf("%d", result.QoSPolicyID))
-	d.Set("qos_policy_id", result.QoSPolicyID)
+	d.SetId(fmt.Sprintf("%d", qosPolicyID))
 	return resourceElementswQoSPolicyRead(d, meta)
 }
 
 // Update QoS Policy
 func resourceElementswQoSPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*Client)
-	qosPolicyID := d.Get("qos_policy_id").(int)
-	name := ""
-	if v, ok := d.GetOk("name"); ok {
-		name = v.(string)
-	}
+	idStr := d.Id()
+	qosPolicyID, _ := strconv.ParseInt(idStr, 10, 64)
+
+	name := d.Get("name").(string)
 	qosList := d.Get("qos").([]interface{})
 	if len(qosList) == 0 {
 		return fmt.Errorf("qos block must be provided")
 	}
 	qosMap := qosList[0].(map[string]interface{})
-	qos := qosDetails{
-		MinIOPS:   qosMap["min_iops"].(int),
-		MaxIOPS:   qosMap["max_iops"].(int),
-		BurstIOPS: qosMap["burst_iops"].(int),
-		BurstTime: qosMap["burst_time"].(int),
-		Curve:     map[string]int{}, // Curve can be set if needed
+	qos := sdk.QoS{
+		MinIOPS:   int64(qosMap["min_iops"].(int)),
+		MaxIOPS:   int64(qosMap["max_iops"].(int)),
+		BurstIOPS: int64(qosMap["burst_iops"].(int)),
 	}
-	req := modifyQoSPolicyRequest{QoSPolicyID: qosPolicyID, Name: name, QoS: qos}
-	_, err := client.ModifyQoSPolicy(req)
+
+	err := client.ModifyQoSPolicy(qosPolicyID, name, qos)
 	if err != nil {
 		return err
 	}
@@ -118,9 +114,10 @@ func resourceElementswQoSPolicyUpdate(d *schema.ResourceData, meta interface{}) 
 // Delete QoS Policy
 func resourceElementswQoSPolicyDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*Client)
-	qosPolicyID := d.Get("qos_policy_id").(int)
-	req := deleteQoSPolicyRequest{QoSPolicyID: qosPolicyID}
-	_, err := client.DeleteQoSPolicy(req)
+	idStr := d.Id()
+	qosPolicyID, _ := strconv.ParseInt(idStr, 10, 64)
+
+	err := client.DeleteQoSPolicy(qosPolicyID)
 	if err != nil {
 		return err
 	}
@@ -130,28 +127,25 @@ func resourceElementswQoSPolicyDelete(d *schema.ResourceData, meta interface{}) 
 
 func resourceElementswQoSPolicyRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*Client)
-	qosPolicyID, ok := d.Get("qos_policy_id").(int)
-	if !ok || qosPolicyID == 0 {
-		return fmt.Errorf("qos_policy_id must be set")
-	}
+	idStr := d.Id()
+	qosPolicyID, _ := strconv.ParseInt(idStr, 10, 64)
 
-	result, err := client.GetQoSPolicy(getQoSPolicyRequest{QoSPolicyID: qosPolicyID})
+	policy, err := client.GetQoSPolicy(qosPolicyID)
 	if err != nil {
 		return err
 	}
 
-	policy := result.QoSPolicy
-	d.SetId(fmt.Sprintf("%d", policy.QoSPolicyID))
+	d.SetId(fmt.Sprintf("%d", policy.QosPolicyID))
 	d.Set("name", policy.Name)
-	d.Set("qos_policy_id", policy.QoSPolicyID)
+	d.Set("qos_policy_id", policy.QosPolicyID)
 	d.Set("volume_ids", policy.VolumeIDs)
 
 	qosMap := map[string]interface{}{
-		"burst_iops": policy.QoS.BurstIOPS,
-		"burst_time": policy.QoS.BurstTime,
-		"max_iops":   policy.QoS.MaxIOPS,
-		"min_iops":   policy.QoS.MinIOPS,
-		"curve":      policy.QoS.Curve,
+		"burst_iops": policy.Qos.BurstIOPS,
+		"burst_time": policy.Qos.BurstTime,
+		"max_iops":   policy.Qos.MaxIOPS,
+		"min_iops":   policy.Qos.MinIOPS,
+		"curve":      policy.Qos.Curve,
 	}
 	d.Set("qos", []interface{}{qosMap})
 

@@ -1,43 +1,14 @@
 package elementsw
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strconv"
 
-	"encoding/json"
-
-	"github.com/fatih/structs"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/scaleoutsean/terraform-provider-solidfire/elementsw/element/jsonrpc"
+	"github.com/scaleoutsean/solidfire-go/sdk"
 )
-
-// CreateAccountRequest is the user input for creating an account
-type CreateAccountRequest struct {
-	Username        string      `structs:"username"`
-	InitiatorSecret string      `structs:"initiatorSecret,omitempty"`
-	TargetSecret    string      `structs:"targetSecret,omitempty"`
-	Attributes      interface{} `structs:"attributes,omitempty"`
-}
-
-// CreateAccountResult is the api returned output
-type CreateAccountResult struct {
-	Account account `json:"account"`
-}
-
-// ModifyAccountRequest is the users input for modifying an account
-type ModifyAccountRequest struct {
-	AccountID       int         `structs:"accountID"`
-	InitiatorSecret string      `structs:"initiatorSecret,omitempty"`
-	TargetSecret    string      `structs:"targetSecret,omitempty"`
-	Attributes      interface{} `structs:"attributes,omitempty"`
-	Username        string      `structs:"username,omitempty"`
-}
-
-// RemoveAccountRequest is the users input for deleteing an account
-type RemoveAccountRequest struct {
-	AccountID int `structs:"accountID"`
-}
 
 func resourceElementSwAccount() *schema.Resource {
 	return &schema.Resource{
@@ -56,14 +27,16 @@ func resourceElementSwAccount() *schema.Resource {
 				Required: true,
 			},
 			"initiator_secret": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Type:      schema.TypeString,
+				Optional:  true,
+				Computed:  true,
+				Sensitive: true,
 			},
 			"target_secret": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Type:      schema.TypeString,
+				Optional:  true,
+				Computed:  true,
+				Sensitive: true,
 			},
 			"attributes": {
 				Type:     schema.TypeList,
@@ -80,52 +53,34 @@ func resourceElementSwAccountCreate(d *schema.ResourceData, meta interface{}) er
 	log.Printf("Creating account: %#v", d)
 	client := meta.(*Client)
 
-	acct := CreateAccountRequest{}
+	req := sdk.AddAccountRequest{}
 
 	if v, ok := d.GetOk("username"); ok {
-		acct.Username = v.(string)
+		req.Username = v.(string)
 	} else {
 		return fmt.Errorf("username argument is required")
 	}
 
 	if v, ok := d.GetOk("initiator_secret"); ok {
-		acct.InitiatorSecret = v.(string)
+		req.InitiatorSecret = v.(string)
 	}
 
 	if v, ok := d.GetOk("target_secret"); ok {
-		acct.TargetSecret = v.(string)
+		req.TargetSecret = v.(string)
 	}
 
-	resp, err := createAccount(client, acct)
-	if err != nil {
-		log.Print("Error creating account")
-		return err
+	client.initOnce.Do(client.init)
+	resp, sdkErr := client.sdkClient.AddAccount(context.TODO(), &req)
+	if sdkErr != nil {
+		log.Printf("Error creating account: %s", sdkErr.Detail)
+		return sdkErr
 	}
 
 	d.SetId(fmt.Sprintf("%v", resp.Account.AccountID))
 
-	log.Printf("Created account: %v %v", acct.Username, resp.Account.AccountID)
+	log.Printf("Created account: %v %v", req.Username, resp.Account.AccountID)
 
 	return resourceElementSwAccountRead(d, meta)
-}
-
-func createAccount(client *Client, request CreateAccountRequest) (CreateAccountResult, error) {
-	params := structs.Map(request)
-
-	log.Printf("Parameters: %v", params)
-
-	response, err := client.CallAPIMethod("AddAccount", params)
-	if err != nil {
-		log.Print("CreateAccount request failed")
-		return CreateAccountResult{}, err
-	}
-
-	var result CreateAccountResult
-	if err := json.Unmarshal([]byte(*response), &result); err != nil {
-		log.Print("Failed to unmarshall response from CreateAccount")
-		return CreateAccountResult{}, err
-	}
-	return result, nil
 }
 
 func resourceElementSwAccountRead(d *schema.ResourceData, meta interface{}) error {
@@ -145,17 +100,23 @@ func resourceElementSwAccountRead(d *schema.ResourceData, meta interface{}) erro
 		return err
 	}
 
-	if _, ok := d.GetOk("username"); ok {
-		d.Set("username", res.Username)
-	}
+	d.Set("username", res.Username)
 
-	if _, ok := d.GetOk("initiator_secret"); ok {
-		d.Set("initiator_secret", res.InitiatorSecret)
-	}
-
-	if _, ok := d.GetOk("target_secret"); ok {
-		d.Set("target_secret", res.TargetSecret)
-	}
+	// Since we drop secrets in GetAccountByID, we don't update them here
+	// to avoid clearing them in the state if they were set during Create/Update.
+	// However, if the user wants them to be totally gone from UI/logs,
+	// maybe we should set them to empty?
+	// The instruction says "drop from the response body ... to avoid exposing them in UI or logs".
+	// If they are in the state, they ARE in the UI of terraform (masked as sensitive).
+	// If I don't Set them, they stay as they were (probably what we want).
+	/*
+		if res.InitiatorSecret != "" {
+			d.Set("initiator_secret", res.InitiatorSecret)
+		}
+		if res.TargetSecret != "" {
+			d.Set("target_secret", res.TargetSecret)
+		}
+	*/
 
 	return nil
 }
@@ -164,43 +125,32 @@ func resourceElementSwAccountUpdate(d *schema.ResourceData, meta interface{}) er
 	log.Printf("Updating account %#v", d)
 	client := meta.(*Client)
 
-	acct := ModifyAccountRequest{}
+	req := sdk.ModifyAccountRequest{}
 
 	id := d.Id()
-	convID, convErr := strconv.Atoi(id)
+	convID, convErr := strconv.ParseInt(id, 10, 64)
 
 	if convErr != nil {
 		return fmt.Errorf("id argument is required")
 	}
-	acct.AccountID = convID
+	req.AccountID = convID
 
-	if v, ok := d.GetOk("username"); ok {
-		acct.Username = v.(string)
+	if d.HasChange("username") {
+		req.Username = d.Get("username").(string)
 	}
 
-	if v, ok := d.GetOk("initiator_secret"); ok {
-		acct.InitiatorSecret = v.(string)
+	if d.HasChange("initiator_secret") {
+		req.InitiatorSecret = d.Get("initiator_secret").(string)
 	}
 
-	if v, ok := d.GetOk("target_secret"); ok {
-		acct.TargetSecret = v.(string)
+	if d.HasChange("target_secret") {
+		req.TargetSecret = d.Get("target_secret").(string)
 	}
 
-	err := modifyAccount(client, acct)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func modifyAccount(client *Client, request ModifyAccountRequest) error {
-	params := structs.Map(request)
-
-	_, err := client.CallAPIMethod("ModifyAccount", params)
-	if err != nil {
-		log.Print("ModifyAccount request failed")
-		return err
+	client.initOnce.Do(client.init)
+	_, sdkErr := client.sdkClient.ModifyAccount(context.TODO(), &req)
+	if sdkErr != nil {
+		return sdkErr
 	}
 
 	return nil
@@ -210,31 +160,20 @@ func resourceElementSwAccountDelete(d *schema.ResourceData, meta interface{}) er
 	log.Printf("Deleting account: %#v", d)
 	client := meta.(*Client)
 
-	acct := RemoveAccountRequest{}
+	req := sdk.RemoveAccountRequest{}
 
 	id := d.Id()
-	convID, convErr := strconv.Atoi(id)
+	convID, convErr := strconv.ParseInt(id, 10, 64)
 
 	if convErr != nil {
 		return fmt.Errorf("id argument is required")
 	}
-	acct.AccountID = convID
+	req.AccountID = convID
 
-	err := removeAccount(client, acct)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func removeAccount(client *Client, request RemoveAccountRequest) error {
-	params := structs.Map(request)
-
-	_, err := client.CallAPIMethod("RemoveAccount", params)
-	if err != nil {
-		log.Print("DeleteAccount request failed")
-		return err
+	client.initOnce.Do(client.init)
+	_, sdkErr := client.sdkClient.RemoveAccount(context.TODO(), &req)
+	if sdkErr != nil {
+		return sdkErr
 	}
 
 	return nil
@@ -253,8 +192,9 @@ func resourceElementSwAccountExists(d *schema.ResourceData, meta interface{}) (b
 
 	_, err := client.GetAccountByID(convID)
 	if err != nil {
-		if err, ok := err.(*jsonrpc.ResponseError); ok {
-			if err.Name == "xUnknownAccount" {
+		// In account.go, we return sdkErr directly.
+		if sdkErr, ok := err.(*sdk.SdkError); ok {
+			if fmt.Sprintf("%s", sdkErr.Detail) == "500:xUnknownAccount" {
 				d.SetId("")
 				return false, nil
 			}

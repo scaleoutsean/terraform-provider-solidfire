@@ -1,44 +1,14 @@
 package elementsw
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
 	"log"
 	"strconv"
 
-	"github.com/fatih/structs"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/scaleoutsean/terraform-provider-solidfire/elementsw/element/jsonrpc"
+	"github.com/scaleoutsean/solidfire-go/sdk"
 )
-
-// initiator represents an initiator object for API requests
-type apiInitiator struct {
-	InitiatorID        int      `structs:"initiatorID,omitempty"`
-	Name               string   `structs:"name"`
-	Alias              string   `structs:"alias,omitempty"`
-	VolumeAccessGroupID int      `structs:"volumeAccessGroupID,omitempty"`
-	IQNs               []string `structs:"iqns,omitempty"`
-}
-
-// CreateInitiatorsRequest the user input for creating an initiator
-type CreateInitiatorsRequest struct {
-	Initiators []apiInitiator `structs:"initiators"`
-}
-
-// CreateInitiatorsResult the API resutls for creatin an initiator
-type CreateInitiatorsResult struct {
-	Initiators []initiatorResponse `json:"initiators"`
-}
-
-// DeleteInitiatorsRequest the users input for deleteing an initiator
-type DeleteInitiatorsRequest struct {
-	Initiators []int `structs:"initiators"`
-}
-
-// ModifyInitiatorsRequest the users input for modifying a Request
-type ModifyInitiatorsRequest struct {
-	Initiators []apiInitiator `structs:"initiators"`
-}
 
 func resourceElementSwInitiator() *schema.Resource {
 	return &schema.Resource{
@@ -86,99 +56,63 @@ func resourceElementSwInitiatorCreate(d *schema.ResourceData, meta interface{}) 
 	log.Printf("Creating initiator: %#v", d)
 	client := meta.(*Client)
 
-	initiators := CreateInitiatorsRequest{}
-	newInitiator := make([]apiInitiator, 1)
-	var iqns []string
+	req := sdk.CreateInitiatorsRequest{}
+	newInit := sdk.CreateInitiator{}
 
 	if v, ok := d.GetOk("name"); ok {
-		newInitiator[0].Name = v.(string)
-	} else {
-		return fmt.Errorf("name argument is required")
+		newInit.Name = v.(string)
 	}
 
 	if v, ok := d.GetOk("alias"); ok {
-		newInitiator[0].Alias = v.(string)
+		newInit.Alias = v.(string)
 	}
 
 	if v, ok := d.GetOk("volume_access_group_id"); ok {
-		newInitiator[0].VolumeAccessGroupID = v.(int)
+		newInit.VolumeAccessGroupID = int64(v.(int))
 	}
 
-   if v, ok := d.GetOk("iqns"); ok {
-	  if a, ok := v.([]interface{}); ok {
-		 for i := range a {
-			iqns = append(iqns, a[i].(string))
-		 }
-		 newInitiator[0].IQNs = iqns
-	  }
-   }
+	// Attributes and other fields could be added here if supported by CreateInitiator struct
+	req.Initiators = []sdk.CreateInitiator{newInit}
 
-	initiators.Initiators = newInitiator
-
-	resp, err := createInitiators(client, initiators)
-	if err != nil {
-		log.Print("Error creating initiator")
-		return err
+	client.initOnce.Do(client.init)
+	res, sdkErr := client.sdkClient.CreateInitiators(context.TODO(), &req)
+	if sdkErr != nil {
+		return sdkErr
 	}
 
-	d.SetId(fmt.Sprintf("%v", resp.Initiators[0].ID))
-	log.Printf("Created initiator: %v %v", newInitiator[0].Name, resp.Initiators[0].ID)
-
+	d.SetId(fmt.Sprintf("%v", res.Initiators[0].InitiatorID))
 	return resourceElementSwInitiatorRead(d, meta)
-}
-
-func createInitiators(client *Client, request CreateInitiatorsRequest) (CreateInitiatorsResult, error) {
-	params := structs.Map(request)
-
-	log.Printf("Parameters: %v", params)
-
-	response, err := client.CallAPIMethod("CreateInitiators", params)
-	if err != nil {
-		log.Print("CreateInitiators request failed")
-		return CreateInitiatorsResult{}, err
-	}
-
-	var result CreateInitiatorsResult
-	if err := json.Unmarshal([]byte(*response), &result); err != nil {
-		log.Print("Failed to unmarshall resposne from CreateInitiators")
-		return CreateInitiatorsResult{}, err
-	}
-	log.Printf("Initiator Result: %v", result)
-	return result, nil
 }
 
 func resourceElementSwInitiatorRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("Reading initiator: %#v", d)
 	client := meta.(*Client)
 
-	initiators := listInitiatorRequest{}
-
-	id := d.Id()
-	s := make([]int, 1)
-	convID, convErr := strconv.Atoi(id)
-
-	if convErr != nil {
-		return fmt.Errorf("id argument is required")
-	}
-
-	s[0] = convID
-	initiators.Initiators = s
-
-	res, err := client.listInitiators(initiators)
+	idStr := d.Id()
+	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		return err
 	}
 
-	if len(res.Initiators) != 1 {
-		return fmt.Errorf("expected one initiator to be found. response contained %v results", len(res.Initiators))
+	req := sdk.ListInitiatorsRequest{
+		Initiators: []int64{id},
+	}
+	client.initOnce.Do(client.init)
+	res, sdkErr := client.sdkClient.ListInitiators(context.TODO(), &req)
+	if sdkErr != nil {
+		return sdkErr
 	}
 
-	d.Set("name", res.Initiators[0].Name)
-	d.Set("alias", res.Initiators[0].Alias)
-	d.Set("attributes", res.Initiators[0].Attributes)
+	if len(res.Initiators) != 1 {
+		return fmt.Errorf("expected one initiator, got %d", len(res.Initiators))
+	}
 
-	if len(res.Initiators[0].VolumeAccessGroups) == 1 {
-		d.Set("volume_access_group_id", res.Initiators[0].VolumeAccessGroups[0])
+	init := res.Initiators[0]
+	d.Set("name", init.InitiatorName)
+	d.Set("alias", init.Alias)
+	d.Set("attributes", init.Attributes)
+	if len(init.VolumeAccessGroups) > 0 {
+		d.Set("volume_access_group_id", init.VolumeAccessGroups[0])
 	}
 
 	return nil
@@ -188,117 +122,61 @@ func resourceElementSwInitiatorUpdate(d *schema.ResourceData, meta interface{}) 
 	log.Printf("Updating initiator: %#v", d)
 	client := meta.(*Client)
 
-	initiators := ModifyInitiatorsRequest{}
-	initiator := make([]apiInitiator, 1)
+	idStr := d.Id()
+	id, _ := strconv.ParseInt(idStr, 10, 64)
 
-	id := d.Id()
-	convID, convErr := strconv.Atoi(id)
-
-	if convErr != nil {
-		return fmt.Errorf("id argument is required")
+	req := sdk.ModifyInitiatorsRequest{}
+	modInit := sdk.ModifyInitiator{
+		InitiatorID: id,
 	}
 
-	initiator[0].InitiatorID = convID
-
-	if v, ok := d.GetOk("alias"); ok {
-		initiator[0].Alias = v.(string)
+	if d.HasChange("alias") {
+		modInit.Alias = d.Get("alias").(string)
+	}
+	if d.HasChange("volume_access_group_id") {
+		modInit.VolumeAccessGroupID = int64(d.Get("volume_access_group_id").(int))
 	}
 
-	if v, ok := d.GetOk("volume_access_group_id"); ok {
-		initiator[0].VolumeAccessGroupID = v.(int)
-	}
+	req.Initiators = []sdk.ModifyInitiator{modInit}
 
-	initiators.Initiators = initiator
-
-	err := modifyInitiators(client, initiators)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func modifyInitiators(client *Client, request ModifyInitiatorsRequest) error {
-	params := structs.Map(request)
-
-	_, err := client.CallAPIMethod("ModifyInitiators", params)
-	if err != nil {
-		log.Print("ModifyInitiators request failed")
-		return err
-	}
-
-	return nil
+	client.initOnce.Do(client.init)
+	_, sdkErr := client.sdkClient.ModifyInitiators(context.TODO(), &req)
+	return sdkErr
 }
 
 func resourceElementSwInitiatorDelete(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("Deleting initiator: %#v", d)
 	client := meta.(*Client)
+	idStr := d.Id()
+	id, _ := strconv.ParseInt(idStr, 10, 64)
 
-	initiators := DeleteInitiatorsRequest{}
-
-	id := d.Id()
-	s := make([]int, 1)
-	convID, convErr := strconv.Atoi(id)
-
-	if convErr != nil {
-		return fmt.Errorf("id argument is required")
+	req := sdk.DeleteInitiatorsRequest{
+		Initiators: []int64{id},
 	}
-
-	s[0] = convID
-	initiators.Initiators = s
-
-	err := deleteInitiator(client, initiators)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func deleteInitiator(client *Client, request DeleteInitiatorsRequest) error {
-	params := structs.Map(request)
-
-	_, err := client.CallAPIMethod("DeleteInitiators", params)
-	if err != nil {
-		log.Print("DeleteInitiator request failed")
-		return err
-	}
-
-	return nil
+	client.initOnce.Do(client.init)
+	_, sdkErr := client.sdkClient.DeleteInitiators(context.TODO(), &req)
+	return sdkErr
 }
 
 func resourceElementSwInitiatorExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	log.Printf("Checking existence of initiator: %#v", d)
 	client := meta.(*Client)
-
-	initiators := listInitiatorRequest{}
-
-	id := d.Id()
-	s := make([]int, 1)
-	convID, convErr := strconv.Atoi(id)
-
-	if convErr != nil {
-		return false, fmt.Errorf("id argument is required")
-	}
-
-	s[0] = convID
-	initiators.Initiators = s
-
-	res, err := client.listInitiators(initiators)
+	idStr := d.Id()
+	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		if err, ok := err.(*jsonrpc.ResponseError); ok {
-			if err.Name == "xUnknown" {
-				d.SetId("")
-				return false, nil
-			}
-		}
-		return false, err
-	}
-
-	if len(res.Initiators) != 1 {
-		d.SetId("")
 		return false, nil
 	}
 
-	return true, nil
+	req := sdk.ListInitiatorsRequest{
+		Initiators: []int64{id},
+	}
+	client.initOnce.Do(client.init)
+	res, sdkErr := client.sdkClient.ListInitiators(context.TODO(), &req)
+	if sdkErr != nil {
+		// Check for 500:xUnknown or similar
+		if sdkErr.Detail == "500:xUnknown" {
+			return false, nil
+		}
+		return false, sdkErr
+	}
+
+	return len(res.Initiators) == 1, nil
 }

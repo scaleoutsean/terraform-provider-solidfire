@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/scaleoutsean/solidfire-go/sdk"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,13 +13,12 @@ func TestGetQoSPolicy(t *testing.T) {
 		t.Skip("Skipping TestGetQoSPolicy; TF_ACC not set")
 	}
 	client := &Client{} // TODO: mock or initialize with test config
-	request := getQoSPolicyRequest{QoSPolicyID: 1}
 
-	result, err := client.GetQoSPolicy(request)
+	result, err := client.GetQoSPolicy(1)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, result.QoSPolicy.QoSPolicyID)
-	assert.NotEmpty(t, result.QoSPolicy.Name)
-	assert.NotNil(t, result.QoSPolicy.QoS)
+	assert.Equal(t, int64(1), result.QosPolicyID)
+	assert.NotEmpty(t, result.Name)
+	assert.NotNil(t, result.Qos)
 }
 
 func TestListQoSPolicies(t *testing.T) {
@@ -26,11 +26,10 @@ func TestListQoSPolicies(t *testing.T) {
 		t.Skip("Skipping TestListQoSPolicies; TF_ACC not set")
 	}
 	client := &Client{} // TODO: mock or initialize with test config
-	request := listQoSPoliciesRequest{}
 
-	result, err := client.ListQoSPolicies(request)
+	result, err := client.ListQoSPolicies()
 	assert.NoError(t, err)
-	assert.NotEmpty(t, result.QoSPolicies)
+	assert.NotEmpty(t, result)
 }
 
 func TestCreateQoSPolicy(t *testing.T) {
@@ -38,19 +37,14 @@ func TestCreateQoSPolicy(t *testing.T) {
 		t.Skip("Skipping TestCreateQoSPolicy; TF_ACC not set")
 	}
 	client := &Client{} // TODO: mock or initialize with test config
-	request := createQoSPolicyRequest{
-		Name: "test-policy",
-		QoS: qosDetails{
-			MinIOPS:   100,
-			MaxIOPS:   200,
-			BurstIOPS: 300,
-			BurstTime: 60,
-			Curve:     map[string]int{},
-		},
+	qos := sdk.QoS{
+		MinIOPS:   100,
+		MaxIOPS:   200,
+		BurstIOPS: 300,
 	}
-	result, err := client.CreateQoSPolicy(request)
+	id, err := client.CreateQoSPolicy("test-policy", qos)
 	assert.NoError(t, err)
-	assert.True(t, result.QoSPolicyID > 0)
+	assert.True(t, id > 0)
 }
 
 func TestModifyQoSPolicy(t *testing.T) {
@@ -58,21 +52,11 @@ func TestModifyQoSPolicy(t *testing.T) {
 		t.Skip("Skipping TestModifyQoSPolicy; TF_ACC not set")
 	}
 	client := &Client{} // TODO: mock or initialize with test config
-	request := modifyQoSPolicyRequest{
-		QoSPolicyID: 1,
-		Name:       "updated-policy",
-		QoS: qosDetails{
-			MinIOPS:   150,
-			MaxIOPS:   250,
-			BurstIOPS: 350,
-			BurstTime: 120,
-			Curve:     map[string]int{},
-		},
+	qos := sdk.QoS{
+		MinIOPS: 150,
 	}
-	result, err := client.ModifyQoSPolicy(request)
+	err := client.ModifyQoSPolicy(1, "updated-policy", qos)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, result.QoSPolicy.QoSPolicyID)
-	assert.Equal(t, "updated-policy", result.QoSPolicy.Name)
 }
 
 func TestDeleteQoSPolicy(t *testing.T) {
@@ -80,8 +64,6 @@ func TestDeleteQoSPolicy(t *testing.T) {
 		t.Skip("Skipping TestDeleteQoSPolicy; TF_ACC not set")
 	}
 	client := &Client{} // TODO: mock or initialize with test config
-	request := deleteQoSPolicyRequest{QoSPolicyID: 1}
-	result, err := client.DeleteQoSPolicy(request)
+	err := client.DeleteQoSPolicy(1)
 	assert.NoError(t, err)
-	assert.NotNil(t, result)
 }

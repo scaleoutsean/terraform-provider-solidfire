@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccElementswReplication_basic(t *testing.T) {
+func TestAccElementswPairing_basic(t *testing.T) {
 	drServer := os.Getenv("ELEMENTSW_SERVER_DR")
 	if drServer == "" {
 		t.Skip("ELEMENTSW_SERVER_DR not set, skipping replication tests")
@@ -34,19 +34,19 @@ func TestAccElementswReplication_basic(t *testing.T) {
 		ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccReplicationClusterConfig(srcServer, srcUser, srcPass, drServer, drUser, drPass),
+				Config: testAccPairingClusterConfig(srcServer, srcUser, srcPass, drServer, drUser, drPass),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("elementsw_replication_cluster.test", "cluster_pair_id"),
-					resource.TestCheckResourceAttrSet("elementsw_replication_cluster.test", "cluster_name"),
+					resource.TestCheckResourceAttrSet("elementsw_cluster_pairing.test", "cluster_pair_id"),
+					resource.TestCheckResourceAttrSet("elementsw_cluster_pairing.test", "cluster_name"),
 				),
 			},
 		},
 	})
 }
 
-func testAccReplicationClusterConfig(srcServer, srcUser, srcPass, drServer, drUser, drPass string) string {
+func testAccPairingClusterConfig(srcServer, srcUser, srcPass, drServer, drUser, drPass string) string {
 	return fmt.Sprintf(`
-resource "elementsw_replication_cluster" "test" {
+resource "elementsw_cluster_pairing" "test" {
   source_cluster {
     endpoint = "%s"
     username = "%s"
