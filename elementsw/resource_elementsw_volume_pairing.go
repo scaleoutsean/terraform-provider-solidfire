@@ -27,6 +27,30 @@ func resourceElementSwVolumePairing() *schema.Resource {
 				Computed:    true,
 				Description: "The pairing key used to complete volume pairing.",
 			},
+			"mode": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "Async",
+				Description: "The replication mode (Async, Sync, or SnapMirror).",
+				ValidateFunc: func(v interface{}, k string) (ws []string, errors []error) {
+					value := v.(string)
+					valid := map[string]bool{
+						"Async":      true,
+						"Sync":       true,
+						"SnapMirror": true,
+					}
+					if !valid[value] {
+						errors = append(errors, fmt.Errorf("%q is not a valid replication mode", value))
+					}
+					return
+				},
+			},
+			"paused": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "Whether to pause the volume pairing.",
+			},
 			// Automated pairing support
 			"target_cluster": clusterConnectionSchema("Target cluster for pairing (API endpoint, username, password)"),
 		},
@@ -36,9 +60,10 @@ func resourceElementSwVolumePairing() *schema.Resource {
 func resourceElementSwVolumePairingCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*Client)
 	volumeID := int64(d.Get("volume_id").(int))
+	mode := d.Get("mode").(string)
 
 	// 1. Start volume pairing on source
-	resp, err := client.StartVolumePairing(volumeID, "Async")
+	resp, err := client.StartVolumePairing(volumeID, mode)
 	if err != nil {
 		return fmt.Errorf("failed to start volume pairing: %w", err)
 	}
@@ -148,8 +173,8 @@ func resourceElementSwVolumePairingUpdate(d *schema.ResourceData, meta interface
 	// Modify volume pair
 	req := sdk.ModifyVolumePairRequest{
 		VolumeID:     volumeID,
-		PausedManual: false,
-		Mode:         "Async",
+		PausedManual: d.Get("paused").(bool),
+		Mode:         d.Get("mode").(string),
 	}
 	err := client.ModifyVolumePair(&req)
 	if err != nil {

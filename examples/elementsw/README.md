@@ -169,6 +169,28 @@ resource "elementsw_replication_volume" "dr_vol" {
 
 **Note:** Currently, if cluster pairing fails or is destroyed, there is no automatic cleanup of the "dangling" relationship on the remote cluster. You may need to manually remove the cluster pair on the other side or dangling relationship on the source. For example, the remote cluster could already have the maximum number of cluster relationships and depite correct functioning of this provider, cluster pairing with that cluster would fail.
 
+How to use the Provider for site or cluster failover:
+
+- `access` (the volume status) is a property of the volume itself that determines if it is the replication source (`readWrite`) or the target (`replicationTarget`).
+- `mode` (`Async`, `Sync`, `SnapMirror`) and `paused` (boolean) are configurable attributes.
+
+Pick a mode to set up replication, and simply swap the value of `access` properies of paired volumes to reverse the direction (A <- B).
+
+Users of solidfire-csi, which uses volume IDs as volume handles and has account ID (tenant ID) storage classes, can easily set up replication and orchestrate site failover. Monitoring of cluster and volume pairings, replication delays and more is available in [SFC](https://github.com/scaleoutsean/sfc/).
+
+```hcl
+# Look up a volume created by K8s CSI (volumeHandle = ID)
+data "elementsw_volume" "csi_vol" {
+  volume_id = 123 
+}
+
+# Use it in your pairing resource
+resource "elementsw_volume_pairing" "k8s_dr" {
+  volume_id      = data.elementsw_volume.csi_vol.volume_id
+  target_cluster = { ... }
+}
+```
+
 ### Add own validation rules
 
 To implement own naming rules or conventions, feel free to create Terraform validation rules.
@@ -188,7 +210,6 @@ variable "volume_name" {
 ```
 
 `variables.tf` contains few other example of validation rules (acceptable volume sizes (min 1Gi, max 16TiB), initiator secrets, and volume QoS values).
-
 
 ### Extend
 

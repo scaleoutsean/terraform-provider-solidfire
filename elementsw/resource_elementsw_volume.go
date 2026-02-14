@@ -59,6 +59,24 @@ func resourceElementSwVolume() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
+			"access": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+				ValidateFunc: func(v interface{}, k string) (ws []string, errors []error) {
+					value := v.(string)
+					valid := map[string]bool{
+						"readWrite":         true,
+						"readOnly":          true,
+						"locked":            true,
+						"replicationTarget": true,
+					}
+					if !valid[value] {
+						errors = append(errors, fmt.Errorf("%q is not a valid volume access mode", value))
+					}
+					return
+				},
+			},
 			"attributes": {
 				Type:     schema.TypeMap,
 				Optional: true,
@@ -94,6 +112,10 @@ func resourceElementSwVolumeCreate(d *schema.ResourceData, meta interface{}) err
 		AccountID:  accountID,
 		TotalSize:  int64(d.Get("total_size").(int)),
 		Enable512e: d.Get("enable512e").(bool),
+	}
+
+	if v, ok := d.GetOk("access"); ok {
+		req.Access = v.(string)
 	}
 
 	if v, ok := d.GetOk("qos_policy_id"); ok {
@@ -135,6 +157,7 @@ func resourceElementSwVolumeRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("total_size", int(vol.TotalSize))
 	d.Set("enable512e", vol.Enable512e)
 	d.Set("iqn", vol.Iqn)
+	d.Set("access", vol.Access)
 	if vol.QosPolicyID != 0 {
 		d.Set("qos_policy_id", int(vol.QosPolicyID))
 	} else {
@@ -156,6 +179,9 @@ func resourceElementSwVolumeUpdate(d *schema.ResourceData, meta interface{}) err
 
 	if d.HasChange("total_size") {
 		req.TotalSize = int64(d.Get("total_size").(int))
+	}
+	if d.HasChange("access") {
+		req.Access = d.Get("access").(string)
 	}
 	if d.HasChange("qos_policy_id") {
 		req.QosPolicyID = int64(d.Get("qos_policy_id").(int))
