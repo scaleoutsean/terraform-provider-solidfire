@@ -1,9 +1,8 @@
 package elementsw
 
 import (
-	"testing"
-
 	"os"
+	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -11,7 +10,8 @@ import (
 var testAccProviders map[string]*schema.Provider
 var testAccProvider *schema.Provider
 var testAccProviderFactories = map[string]func() (*schema.Provider, error){
-	"elementsw": func() (*schema.Provider, error) { return Provider(), nil },
+	"elementsw":       func() (*schema.Provider, error) { return Provider(), nil },
+	"elementswremote": func() (*schema.Provider, error) { return Provider(), nil },
 }
 
 func TestProvider(t *testing.T) {
@@ -25,10 +25,7 @@ func TestProvider_impl(t *testing.T) {
 }
 
 func init() {
-	testAccProvider = Provider()
-	testAccProviders = map[string]*schema.Provider{
-		"elementsw": testAccProvider,
-	}
+	// No global testAccProvider to avoid leakage between tests
 }
 
 func testAccPreCheck(t *testing.T) {

@@ -10,11 +10,11 @@ func dataSourceElementSwVolumeIQN() *schema.Resource {
 	return &schema.Resource{
 		Read: dataSourceElementSwVolumeIQNRead,
 		Schema: map[string]*schema.Schema{
-			"unique_id": {Type: schema.TypeString, Required: true},
-			"name": {Type: schema.TypeString, Required: true},
-			"volume_id": {Type: schema.TypeInt, Required: true},
-			"svip": {Type: schema.TypeString, Required: true},
-			"iqn": {Type: schema.TypeString, Computed: true},
+			"unique_id":     {Type: schema.TypeString, Required: true},
+			"name":          {Type: schema.TypeString, Required: true},
+			"volume_id":     {Type: schema.TypeInt, Required: true},
+			"svip":          {Type: schema.TypeString, Required: true},
+			"iqn":           {Type: schema.TypeString, Computed: true},
 			"target_portal": {Type: schema.TypeString, Computed: true},
 		},
 	}

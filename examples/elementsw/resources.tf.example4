@@ -18,7 +18,7 @@ resource "elementsw_cluster_pairing" "dr_site" {
 resource "elementsw_volume" "primary" {
   name       = "primary-vol"
   account    = "admin" # assuming account name as per updated schema
-  total_size = 1000000000
+  total_size = 1073741824 # 1 GiB minimum
   enable512e = true
 }
 

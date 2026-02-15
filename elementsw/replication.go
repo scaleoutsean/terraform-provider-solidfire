@@ -42,6 +42,9 @@ func (c *Client) RemoveClusterPair(id int64) error {
 	}
 	c.initOnce.Do(c.init)
 	_, sdkErr := c.sdkClient.RemoveClusterPair(context.TODO(), &req)
+	if sdkErr == nil {
+		return nil
+	}
 	return sdkErr
 }
 
@@ -65,6 +68,9 @@ func (c *Client) CompleteVolumePairing(volumeID int64, key string) error {
 	}
 	c.initOnce.Do(c.init)
 	_, sdkErr := c.sdkClient.CompleteVolumePairing(context.TODO(), &req)
+	if sdkErr == nil {
+		return nil
+	}
 	return sdkErr
 }
 
@@ -80,6 +86,9 @@ func (c *Client) ListActivePairedVolumes() ([]sdk.Volume, error) {
 func (c *Client) ModifyVolumePair(req *sdk.ModifyVolumePairRequest) error {
 	c.initOnce.Do(c.init)
 	_, sdkErr := c.sdkClient.ModifyVolumePair(context.TODO(), req)
+	if sdkErr == nil {
+		return nil
+	}
 	return sdkErr
 }
 
@@ -89,5 +98,8 @@ func (c *Client) RemoveVolumePair(volumeID int64) error {
 	}
 	c.initOnce.Do(c.init)
 	_, sdkErr := c.sdkClient.RemoveVolumePair(context.TODO(), &req)
+	if sdkErr == nil {
+		return nil
+	}
 	return sdkErr
 }

@@ -38,6 +38,22 @@ func resourceElementSwVolume() *schema.Resource {
 			"total_size": {
 				Type:     schema.TypeInt,
 				Required: true,
+				ValidateFunc: func(v interface{}, k string) (ws []string, errors []error) {
+					value := v.(int)
+					if value < 1073741824 {
+						errors = append(errors, fmt.Errorf("%q must be at least 1073741824 bytes (1 GiB)", k))
+					}
+					return
+				},
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					o, _ := strconv.ParseInt(old, 10, 64)
+					n, _ := strconv.ParseInt(new, 10, 64)
+					diff := o - n
+					if diff < 0 {
+						diff = -diff
+					}
+					return diff < 1048576 // Ignore differences less than 1MiB due to API rounding
+				},
 			},
 			"enable512e": {
 				Type:     schema.TypeBool,
@@ -46,14 +62,17 @@ func resourceElementSwVolume() *schema.Resource {
 			"min_iops": {
 				Type:     schema.TypeInt,
 				Optional: true,
+				Computed: true,
 			},
 			"max_iops": {
 				Type:     schema.TypeInt,
 				Optional: true,
+				Computed: true,
 			},
 			"burst_iops": {
 				Type:     schema.TypeInt,
 				Optional: true,
+				Computed: true,
 			},
 			"qos_policy_id": {
 				Type:     schema.TypeInt,

@@ -47,9 +47,15 @@ func Provider() *schema.Provider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
-			"elementsw_cluster":       dataSourceElementSwCluster(),
-			"elementsw_volume_iqn":    dataSourceElementSwVolumeIQN(),
-			"elementsw_cluster_stats": dataSourceElementSwClusterStats(),
+			"elementsw_cluster":             dataSourceElementSwCluster(),
+			"elementsw_account":             dataSourceElementSwAccount(),
+			"elementsw_volume":              dataSourceElementSwVolume(),
+			"elementsw_volume_iqn":          dataSourceElementSwVolumeIQN(),
+			"elementsw_cluster_stats":       dataSourceElementSwClusterStats(),
+			"elementsw_volumes_by_account":  dataSourceElementswVolumesByAccount(),
+			"elementsw_qos_policy":          dataSourceElementSwQosPolicy(),
+			"elementsw_initiator":           dataSourceElementSwInitiator(),
+			"elementsw_volume_access_group": dataSourceElementSwVolumeAccessGroup(),
 		},
 
 		ConfigureFunc: providerConfigure,
@@ -57,11 +63,14 @@ func Provider() *schema.Provider {
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
+	server := d.Get("elementsw_server").(string)
+	version := d.Get("api_version").(string)
+	user := d.Get("username").(string)
 	config := configStuct{
-		User:            d.Get("username").(string),
+		User:            user,
 		Password:        d.Get("password").(string),
-		ElementSwServer: d.Get("elementsw_server").(string),
-		APIVersion:      d.Get("api_version").(string),
+		ElementSwServer: server,
+		APIVersion:      version,
 	}
 
 	return config.clientFun()

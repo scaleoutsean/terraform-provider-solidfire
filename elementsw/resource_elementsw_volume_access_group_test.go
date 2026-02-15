@@ -6,16 +6,16 @@ import (
 
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestVolumeAccessGroup_basic(t *testing.T) {
 	var volumeAccessGroup volumeAccessGroup
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckElementSwVolumeAccessGroupDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckElementSwVolumeAccessGroupDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(
@@ -35,9 +35,9 @@ func TestVolumeAccessGroup_basic(t *testing.T) {
 func TestVolumeAccessGroup_update(t *testing.T) {
 	var volumeAccessGroup volumeAccessGroup
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckElementSwVolumeAccessGroupDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckElementSwVolumeAccessGroupDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(
@@ -67,7 +67,7 @@ func TestVolumeAccessGroup_update(t *testing.T) {
 // 	var volumeAccessGroup volumeAccessGroup
 // 	resource.Test(t, resource.TestCase{
 // 		PreCheck:     func() { testAccPreCheck(t) },
-// 		Providers:    testAccProviders,
+// 		ProviderFactories: testAccProviderFactories,
 // 		CheckDestroy: testAccCheckElementSwVolumeAccessGroupDestroy,
 // 		Steps: []resource.TestStep{
 // 			{

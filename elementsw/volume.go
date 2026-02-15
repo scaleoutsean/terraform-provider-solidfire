@@ -20,6 +20,24 @@ func (c *Client) ListVolumes(volumeIDs []int64) ([]sdk.Volume, error) {
 	return res.Volumes, nil
 }
 
+func (c *Client) ModifyVolume(req *sdk.ModifyVolumeRequest) error {
+	c.initOnce.Do(c.init)
+	_, sdkErr := c.sdkClient.ModifyVolume(context.TODO(), req)
+	if sdkErr != nil {
+		return sdkErr
+	}
+	return nil
+}
+
+func (c *Client) ListActiveVolumes(req *sdk.ListActiveVolumesRequest) ([]sdk.Volume, error) {
+	c.initOnce.Do(c.init)
+	res, sdkErr := c.sdkClient.ListActiveVolumes(context.TODO(), req)
+	if sdkErr != nil {
+		return nil, sdkErr
+	}
+	return res.Volumes, nil
+}
+
 func (c *Client) GetVolume(volumeID int64) (*sdk.Volume, error) {
 	vols, err := c.ListVolumes([]int64{volumeID})
 	if err != nil {

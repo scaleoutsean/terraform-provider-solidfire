@@ -191,6 +191,18 @@ resource "elementsw_volume_pairing" "k8s_dr" {
 }
 ```
 
+`elementsw_volume` can be looked up by Name or ID without managing it in the current Terraform state.
+
+```hcl
+data "elementsw_volume" "from_k8s" {
+  volume_id = 42
+}
+
+output "iqn" {
+  value = data.elementsw_volume.from_k8s.iqn
+}
+```
+
 ### Add own validation rules
 
 To implement own naming rules or conventions, feel free to create Terraform validation rules.

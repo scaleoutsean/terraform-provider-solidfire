@@ -3,7 +3,6 @@ package elementsw
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -25,6 +24,10 @@ func resourceElementSwAccount() *schema.Resource {
 			"username": {
 				Type:     schema.TypeString,
 				Required: true,
+			},
+			"account_id": {
+				Type:     schema.TypeInt,
+				Computed: true,
 			},
 			"initiator_secret": {
 				Type:      schema.TypeString,
@@ -50,7 +53,6 @@ func resourceElementSwAccount() *schema.Resource {
 }
 
 func resourceElementSwAccountCreate(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("Creating account: %#v", d)
 	client := meta.(*Client)
 
 	req := sdk.AddAccountRequest{}
@@ -72,19 +74,16 @@ func resourceElementSwAccountCreate(d *schema.ResourceData, meta interface{}) er
 	client.initOnce.Do(client.init)
 	resp, sdkErr := client.sdkClient.AddAccount(context.TODO(), &req)
 	if sdkErr != nil {
-		log.Printf("Error creating account: %s", sdkErr.Detail)
 		return sdkErr
 	}
 
 	d.SetId(fmt.Sprintf("%v", resp.Account.AccountID))
-
-	log.Printf("Created account: %v %v", req.Username, resp.Account.AccountID)
+	d.Set("account_id", int(resp.Account.AccountID))
 
 	return resourceElementSwAccountRead(d, meta)
 }
 
 func resourceElementSwAccountRead(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("Reading account: %#v", d)
 	client := meta.(*Client)
 
 	id := d.Id()
@@ -96,11 +95,11 @@ func resourceElementSwAccountRead(d *schema.ResourceData, meta interface{}) erro
 
 	res, err := client.GetAccountByID(convID)
 	if err != nil {
-		log.Print("GetAccountByID failed")
 		return err
 	}
 
 	d.Set("username", res.Username)
+	d.Set("account_id", int(res.AccountID))
 
 	// Since we drop secrets in GetAccountByID, we don't update them here
 	// to avoid clearing them in the state if they were set during Create/Update.
@@ -122,7 +121,6 @@ func resourceElementSwAccountRead(d *schema.ResourceData, meta interface{}) erro
 }
 
 func resourceElementSwAccountUpdate(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("Updating account %#v", d)
 	client := meta.(*Client)
 
 	req := sdk.ModifyAccountRequest{}
@@ -157,7 +155,6 @@ func resourceElementSwAccountUpdate(d *schema.ResourceData, meta interface{}) er
 }
 
 func resourceElementSwAccountDelete(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("Deleting account: %#v", d)
 	client := meta.(*Client)
 
 	req := sdk.RemoveAccountRequest{}
@@ -180,7 +177,6 @@ func resourceElementSwAccountDelete(d *schema.ResourceData, meta interface{}) er
 }
 
 func resourceElementSwAccountExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	log.Printf("Checking existence of account: %#v", d)
 	client := meta.(*Client)
 
 	id := d.Id()
@@ -199,7 +195,6 @@ func resourceElementSwAccountExists(d *schema.ResourceData, meta interface{}) (b
 				return false, nil
 			}
 		}
-		log.Print("AccountExists failed")
 		return false, err
 	}
 

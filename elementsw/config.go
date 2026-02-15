@@ -3,6 +3,8 @@ package elementsw
 import (
 	"crypto/tls"
 	"net/http"
+	"net/url"
+	"strings"
 )
 
 // Config is a struct for user input
@@ -28,8 +30,15 @@ type APIError struct {
 
 // Client is the main function to connect to the APi
 func (c *configStuct) clientFun() (*Client, error) {
+	host := c.ElementSwServer
+	if strings.Contains(host, "://") {
+		u, err := url.Parse(host)
+		if err == nil {
+			host = u.Host
+		}
+	}
 	client := &Client{
-		Host:     "https://" + c.ElementSwServer,
+		Host:     host,
 		Username: c.User,
 		Password: c.Password,
 		HTTPTransport: &http.Transport{

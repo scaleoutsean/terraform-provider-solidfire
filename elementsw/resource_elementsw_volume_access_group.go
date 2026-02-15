@@ -3,7 +3,6 @@ package elementsw
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -52,7 +51,6 @@ func resourceElementSwVolumeAccessGroup() *schema.Resource {
 }
 
 func resourceElementSwVolumeAccessGroupCreate(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("Creating volume access group: %#v", d)
 	client := meta.(*Client)
 
 	req := sdk.CreateVolumeAccessGroupRequest{}
@@ -78,7 +76,6 @@ func resourceElementSwVolumeAccessGroupCreate(d *schema.ResourceData, meta inter
 }
 
 func resourceElementSwVolumeAccessGroupRead(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("Reading volume access group: %#v", d)
 	client := meta.(*Client)
 
 	idStr := d.Id()

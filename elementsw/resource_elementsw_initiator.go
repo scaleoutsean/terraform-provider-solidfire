@@ -3,7 +3,6 @@ package elementsw
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -53,7 +52,6 @@ func resourceElementSwInitiator() *schema.Resource {
 }
 
 func resourceElementSwInitiatorCreate(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("Creating initiator: %#v", d)
 	client := meta.(*Client)
 
 	req := sdk.CreateInitiatorsRequest{}
@@ -85,7 +83,6 @@ func resourceElementSwInitiatorCreate(d *schema.ResourceData, meta interface{}) 
 }
 
 func resourceElementSwInitiatorRead(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("Reading initiator: %#v", d)
 	client := meta.(*Client)
 
 	idStr := d.Id()
@@ -119,7 +116,6 @@ func resourceElementSwInitiatorRead(d *schema.ResourceData, meta interface{}) er
 }
 
 func resourceElementSwInitiatorUpdate(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("Updating initiator: %#v", d)
 	client := meta.(*Client)
 
 	idStr := d.Id()

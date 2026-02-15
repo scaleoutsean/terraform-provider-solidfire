@@ -6,16 +6,16 @@ import (
 
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccount_basic(t *testing.T) {
 	var account account
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckElementSwAccountDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckElementSwAccountDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(
@@ -34,9 +34,9 @@ func TestAccount_basic(t *testing.T) {
 func TestAccount_secrets(t *testing.T) {
 	var account account
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckElementSwAccountDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckElementSwAccountDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(
@@ -59,8 +59,8 @@ func TestAccount_secrets(t *testing.T) {
 func TestAccount_update(t *testing.T) {
 	var account account
 	resource.Test(t, resource.TestCase{
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckElementSwAccountDestroy,
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckElementSwAccountDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(

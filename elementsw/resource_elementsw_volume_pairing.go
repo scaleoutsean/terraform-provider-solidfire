@@ -1,8 +1,9 @@
 package elementsw
 
 import (
-	"context"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/scaleoutsean/solidfire-go/sdk"
@@ -76,10 +77,13 @@ func resourceElementSwVolumePairingCreate(d *schema.ResourceData, meta interface
 		targetConn := expandClusterConnection(targetList)
 		if targetConn != nil {
 			// Create target client
-			targetClient, err := createSFClientFromConn(targetConn)
+			targetSF, err := createSFClientFromConn(targetConn)
 			if err != nil {
 				return fmt.Errorf("failed to create target cluster client: %w", err)
 			}
+			targetClient := &Client{sdkClient: targetSF}
+			// Important: Mark as initialized so targetClient.init() doesn't overwrite our SDK client
+			targetClient.initOnce.Do(func() {})
 
 			// We need the target volume ID.
 			// Strategy: Get source volume name, find volume with same name on target.
@@ -91,54 +95,79 @@ func resourceElementSwVolumePairingCreate(d *schema.ResourceData, meta interface
 			}
 			sourceVolName := vol.Name
 
-			// Find volume on target
+			// Find volume on target with retry
 			targetVolumeID := int64(0)
-			startID := int64(0)
-			for {
-				req := sdk.ListActiveVolumesRequest{
-					StartVolumeID: startID,
-					Limit:         1000,
-				}
-				listResp, sdkErr := targetClient.ListActiveVolumes(context.TODO(), &req)
-				if sdkErr != nil {
-					return fmt.Errorf("failed to list volumes on target: %s", sdkErr.Detail)
-				}
+			for attempt := 0; attempt < 10; attempt++ {
+				startID := int64(0)
+				for {
+					req := sdk.ListActiveVolumesRequest{
+						StartVolumeID: startID,
+						Limit:         1000,
+					}
+					volumes, err := targetClient.ListActiveVolumes(&req)
+					if err != nil {
+						return fmt.Errorf("failed to list volumes on target: %w", err)
+					}
 
-				if len(listResp.Volumes) == 0 {
-					break
-				}
-
-				for _, v := range listResp.Volumes {
-					if v.Name == sourceVolName {
-						targetVolumeID = v.VolumeID
+					if len(volumes) == 0 {
 						break
 					}
-					if v.VolumeID > startID {
-						startID = v.VolumeID
+
+					for _, v := range volumes {
+						if v.Name == sourceVolName {
+							targetVolumeID = v.VolumeID
+							break
+						}
+						if v.VolumeID > startID {
+							startID = v.VolumeID
+						}
 					}
+					if targetVolumeID != 0 || len(volumes) < 1000 {
+						break
+					}
+					startID++
 				}
 				if targetVolumeID != 0 {
 					break
 				}
-				// If we got fewer than limit, we are done
-				if len(listResp.Volumes) < 1000 {
-					break
-				}
-				startID++ // Next batch
+				time.Sleep(2 * time.Second)
 			}
 
 			if targetVolumeID == 0 {
-				return fmt.Errorf("target volume with name '%s' not found on target cluster", sourceVolName)
+				return fmt.Errorf("target volume with name '%s' not found on target cluster after retries", sourceVolName)
+			}
+
+			// Ensure target volume is set to replicationTarget mode before pairing
+			ourlog.Infof("Setting target volume %d to 'replicationTarget' mode", targetVolumeID)
+			modifyReq := &sdk.ModifyVolumeRequest{
+				VolumeID: targetVolumeID,
+				Access:   "replicationTarget",
+			}
+			err = targetClient.ModifyVolume(modifyReq)
+			if err != nil {
+				return fmt.Errorf("failed to set target volume to replicationTarget: %w", err)
 			}
 
 			// Complete pairing on target
-			complReq := sdk.CompleteVolumePairingRequest{
-				VolumePairingKey: resp.VolumePairingKey,
-				VolumeID:         targetVolumeID,
+			// Retry as cluster pairing might not be fully established (Connected) yet
+			var lastErr error
+			var success bool
+			for i := 0; i < 20; i++ {
+				err = targetClient.CompleteVolumePairing(targetVolumeID, resp.VolumePairingKey)
+				if err == nil {
+					success = true
+					break
+				}
+				lastErr = err
+				// xMVIPNotPaired means clusters are not yet paired or transitioning
+				if !strings.Contains(err.Error(), "xMVIPNotPaired") {
+					return fmt.Errorf("failed to complete volume pairing on target: %w", err)
+				}
+				ourlog.Infof("Waiting for cluster pairing to be ready (attempt %d/20)...", i+1)
+				time.Sleep(3 * time.Second)
 			}
-			_, sdkErr := targetClient.CompleteVolumePairing(context.TODO(), &complReq)
-			if sdkErr != nil {
-				return fmt.Errorf("failed to complete volume pairing on target: %s", sdkErr.Detail)
+			if !success {
+				return fmt.Errorf("failed to complete volume pairing on target after retries: %w", lastErr)
 			}
 		}
 	}

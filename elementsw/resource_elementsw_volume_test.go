@@ -6,17 +6,17 @@ import (
 
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/scaleoutsean/solidfire-go/sdk"
 )
 
 func TestVolume_basic(t *testing.T) {
 	var volume sdk.Volume
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckElementSwVolumeDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckElementSwVolumeDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(

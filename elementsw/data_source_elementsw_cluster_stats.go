@@ -37,8 +37,8 @@ func dataSourceElementSwClusterStats() *schema.Resource {
 
 			// Cluster Capacity (Subset of interesting fields)
 			"capacity": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Type:        schema.TypeList,
+				Computed:    true,
 				Description: "Cluster capacity information.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -56,8 +56,8 @@ func dataSourceElementSwClusterStats() *schema.Resource {
 
 			// Cluster Stats (Subset of interesting fields)
 			"metrics": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Type:        schema.TypeList,
+				Computed:    true,
 				Description: "Real-time cluster performance metrics.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
