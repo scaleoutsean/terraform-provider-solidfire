@@ -28,7 +28,7 @@ resource "elementsw_initiator" "main-initiator" {
 
 The following arguments are supported:
 
-* `name` - (Required) The name of the ElementSW initiator.
+* `name` - (Required) The name of the ElementSW initiator (IQN/WWPN). Forces a new resource to be created if changed.
 * `alias` - (Optional) The user-friendly alias of the ElementSW initiator.
 * `volume_access_group_id` - (Optional) The ID of the ElementSW volume access group
   to use with the initiator.

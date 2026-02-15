@@ -25,6 +25,7 @@ func resourceElementSwVolume() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true, // volume name is immutable at the API level -> recreate to rename
 			},
 			"account": {
 				Type:     schema.TypeString,

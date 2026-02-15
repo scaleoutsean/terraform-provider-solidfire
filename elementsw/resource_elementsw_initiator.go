@@ -24,6 +24,7 @@ func resourceElementSwInitiator() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true, // initiator name (IQN/WWPN) is immutable -> recreate to rename
 			},
 			"alias": {
 				Type:     schema.TypeString,

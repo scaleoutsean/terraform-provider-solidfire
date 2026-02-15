@@ -20,7 +20,7 @@ as the volume creation is complete, the volume is available for connection via i
 resource "elementsw_volume" "main-volume" {
   name        = "main-volume"
   account     = "1"
-  total_size  = 10000000000
+  total_size  = 1073741824
   enable512e  = true
   min_iops    = 50
   max_iops    = 10000
@@ -32,9 +32,9 @@ resource "elementsw_volume" "main-volume" {
 
 The following arguments are supported:
 
-* `name` - (Required) The name of the ElementSW volume.
+* `name` - (Required) The name of the ElementSW volume. Forces a new resource to be created if changed.
 * `account` - (Required) The unique identifier or name of the ElementSW account owner.
-* `total_size` - (Required) The total size of the volume, in bytes. Size is rounded up to the nearest 1MB size.
+* `total_size` - (Required) The total size of the volume, in bytes. Minimum is 1073741824 (1 GiB). Size is rounded up to the nearest 1MiB boundary.
 * `enable512e` - (Required) Whether to enable 512-byte sector emulation. The setting needs to
   be enabled if using VMWare.
 * `min_iops` - (Optional) The minimum initial quality of service.
