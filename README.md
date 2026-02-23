@@ -2,7 +2,7 @@
 
 <!-- TOC -->
 
-- [Terraform Provider SolidFire](#terraform-provider-solidfire)
+- [Terraform Provider for SolidFire](#terraform-provider-for-solidfire)
   - [Naming Conventions](#naming-conventions)
   - [Using the Provider](#using-the-provider)
     - [Provider Documentation](#provider-documentation)
@@ -20,7 +20,7 @@
     - [Walk-through example](#walk-through-example)
       - [Installing Go and Terraform](#installing-go-and-terraform)
       - [Installing dependencies](#installing-dependencies)
-      - [Cloning the NetApp provider repository and building the provider](#cloning-the-netapp-provider-repository-and-building-the-provider)
+      - [Cloning the provider repository and building the provider](#cloning-the-provider-repository-and-building-the-provider)
       - [Sanity check](#sanity-check)
 
 <!-- /TOC -->
@@ -46,12 +46,13 @@ SolidFire does not require all resources' names to be unique. They are considere
 
 This provider assumes that resource names are unique, and enforces it within its scope. This is not an issue if everything is managed through Terraform, but could raise conflicts if the rule is not respected outside of Terraform.
 
+**WARNING:** Users should **be careful** with **immutable** resource properties. Some obvious examples are volume name and IQN name. These are immutable in SolidFire, so Terraform won't allow changes: if you change them, Terraform will want to **destroy** existing and create new ones (`will be updated in-place` won't be shown). Initiator alias is mutable.
+
 ## Using the Provider
 
-The current version of this provider requires Terraform 1.5 to run.
+The current version of this provider requires Terraform 1.5+ to run.
 
 ### Provider Documentation
-
 
 ### Controlling the provider version
 

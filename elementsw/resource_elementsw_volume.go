@@ -141,7 +141,7 @@ func resourceElementSwVolumeCreate(d *schema.ResourceData, meta interface{}) err
 	if v, ok := d.GetOk("qos_policy_id"); ok {
 		req.QosPolicyID = int64(v.(int))
 	} else {
-		req.Qos = sdk.QoS{
+		req.Qos = &sdk.QoS{
 			MinIOPS:   int64(d.Get("min_iops").(int)),
 			MaxIOPS:   int64(d.Get("max_iops").(int)),
 			BurstIOPS: int64(d.Get("burst_iops").(int)),
@@ -206,7 +206,7 @@ func resourceElementSwVolumeUpdate(d *schema.ResourceData, meta interface{}) err
 	if d.HasChange("qos_policy_id") {
 		req.QosPolicyID = int64(d.Get("qos_policy_id").(int))
 	} else if d.HasChange("min_iops") || d.HasChange("max_iops") || d.HasChange("burst_iops") {
-		req.Qos = sdk.QoS{
+		req.Qos = &sdk.QoS{
 			MinIOPS:   int64(d.Get("min_iops").(int)),
 			MaxIOPS:   int64(d.Get("max_iops").(int)),
 			BurstIOPS: int64(d.Get("burst_iops").(int)),
