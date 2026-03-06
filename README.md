@@ -19,7 +19,7 @@ terraform {
   required_providers {
     solidfire = {
       source  = "scaleoutsean/solidfire"
-      version = "~> 0.4.0" # replace with the latest version
+      version = "~> 0.4.2" # replace with the latest version
     }
   }
 }
