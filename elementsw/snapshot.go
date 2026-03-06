@@ -21,7 +21,10 @@ func (c *Client) DeleteSnapshot(id int64) error {
 	}
 	c.initOnce.Do(c.init)
 	_, sdkErr := c.sdkClient.DeleteSnapshot(context.TODO(), &req)
-	return sdkErr
+	if sdkErr != nil {
+		return sdkErr
+	}
+	return nil
 }
 
 func (c *Client) ListSnapshots(volumeID int64) ([]sdk.Snapshot, error) {
@@ -49,13 +52,19 @@ func (c *Client) CreateGroupSnapshot(req *sdk.CreateGroupSnapshotRequest) (*sdk.
 func (c *Client) ModifySnapshot(req *sdk.ModifySnapshotRequest) error {
 	c.initOnce.Do(c.init)
 	_, sdkErr := c.sdkClient.ModifySnapshot(context.TODO(), req)
-	return sdkErr
+	if sdkErr != nil {
+		return sdkErr
+	}
+	return nil
 }
 
 func (c *Client) ModifyGroupSnapshot(req *sdk.ModifyGroupSnapshotRequest) error {
 	c.initOnce.Do(c.init)
 	_, sdkErr := c.sdkClient.ModifyGroupSnapshot(context.TODO(), req)
-	return sdkErr
+	if sdkErr != nil {
+		return sdkErr
+	}
+	return nil
 }
 
 func (c *Client) DeleteGroupSnapshot(id int64, saveMembers bool) error {
@@ -65,7 +74,10 @@ func (c *Client) DeleteGroupSnapshot(id int64, saveMembers bool) error {
 	}
 	c.initOnce.Do(c.init)
 	_, sdkErr := c.sdkClient.DeleteGroupSnapshot(context.TODO(), &req)
-	return sdkErr
+	if sdkErr != nil {
+		return sdkErr
+	}
+	return nil
 }
 
 func (c *Client) ListGroupSnapshots(volumeIDs []int64) ([]sdk.GroupSnapshot, error) {

@@ -31,7 +31,7 @@ func resourceElementSwInitiator() *schema.Resource {
 				Optional: true,
 			},
 			"attributes": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeMap,
 				Optional: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -76,7 +76,10 @@ func resourceElementSwInitiatorCreate(d *schema.ResourceData, meta interface{}) 
 	client.initOnce.Do(client.init)
 	res, sdkErr := client.sdkClient.CreateInitiators(context.TODO(), &req)
 	if sdkErr != nil {
-		return sdkErr
+		if sdkErr != nil {
+			return sdkErr
+		}
+		return nil
 	}
 
 	d.SetId(fmt.Sprintf("%v", res.Initiators[0].InitiatorID))
@@ -98,7 +101,10 @@ func resourceElementSwInitiatorRead(d *schema.ResourceData, meta interface{}) er
 	client.initOnce.Do(client.init)
 	res, sdkErr := client.sdkClient.ListInitiators(context.TODO(), &req)
 	if sdkErr != nil {
-		return sdkErr
+		if sdkErr != nil {
+			return sdkErr
+		}
+		return nil
 	}
 
 	if len(res.Initiators) != 1 {
@@ -138,7 +144,10 @@ func resourceElementSwInitiatorUpdate(d *schema.ResourceData, meta interface{}) 
 
 	client.initOnce.Do(client.init)
 	_, sdkErr := client.sdkClient.ModifyInitiators(context.TODO(), &req)
-	return sdkErr
+	if sdkErr != nil {
+		return sdkErr
+	}
+	return nil
 }
 
 func resourceElementSwInitiatorDelete(d *schema.ResourceData, meta interface{}) error {
@@ -151,7 +160,10 @@ func resourceElementSwInitiatorDelete(d *schema.ResourceData, meta interface{}) 
 	}
 	client.initOnce.Do(client.init)
 	_, sdkErr := client.sdkClient.DeleteInitiators(context.TODO(), &req)
-	return sdkErr
+	if sdkErr != nil {
+		return sdkErr
+	}
+	return nil
 }
 
 func resourceElementSwInitiatorExists(d *schema.ResourceData, meta interface{}) (bool, error) {

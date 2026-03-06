@@ -9,9 +9,14 @@ import (
 
 var testAccProviders map[string]*schema.Provider
 var testAccProvider *schema.Provider
+
+func init() {
+	testAccProvider = Provider()
+}
+
 var testAccProviderFactories = map[string]func() (*schema.Provider, error){
-	"elementsw":       func() (*schema.Provider, error) { return Provider(), nil },
-	"elementswremote": func() (*schema.Provider, error) { return Provider(), nil },
+	"solidfire":       func() (*schema.Provider, error) { return testAccProvider, nil },
+	"solidfireremote": func() (*schema.Provider, error) { return testAccProvider, nil },
 }
 
 func TestProvider(t *testing.T) {
@@ -24,24 +29,20 @@ func TestProvider_impl(t *testing.T) {
 	var _ *schema.Provider = Provider()
 }
 
-func init() {
-	// No global testAccProvider to avoid leakage between tests
-}
-
 func testAccPreCheck(t *testing.T) {
-	if v := os.Getenv("ELEMENTSW_USERNAME"); v == "" {
-		t.Fatal("ELEMENTSW_USERNAME must be set for acceptance tests")
+	if v := os.Getenv("SOLIDFIRE_USERNAME"); v == "" {
+		t.Fatal("SOLIDFIRE_USERNAME must be set for acceptance tests")
 	}
 
-	if v := os.Getenv("ELEMENTSW_PASSWORD"); v == "" {
-		t.Fatal("ELEMENTSW_PASSWORD must be set for acceptance tests")
+	if v := os.Getenv("SOLIDFIRE_PASSWORD"); v == "" {
+		t.Fatal("SOLIDFIRE_PASSWORD must be set for acceptance tests")
 	}
 
-	if v := os.Getenv("ELEMENTSW_SERVER"); v == "" {
-		t.Fatal("ELEMENTSW_SERVER must be set for acceptance tests")
+	if v := os.Getenv("SOLIDFIRE_SERVER"); v == "" {
+		t.Fatal("SOLIDFIRE_SERVER must be set for acceptance tests")
 	}
 
-	if v := os.Getenv("ELEMENTSW_API_VERSION"); v == "" {
-		t.Fatal("ELEMENTSW_API_VERSION must be set for acceptance tests")
+	if v := os.Getenv("SOLIDFIRE_API_VERSION"); v == "" {
+		t.Fatal("SOLIDFIRE_API_VERSION must be set for acceptance tests")
 	}
 }

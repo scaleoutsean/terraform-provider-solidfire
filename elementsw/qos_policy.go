@@ -39,7 +39,10 @@ func (c *Client) ModifyQoSPolicy(id int64, name string, qos sdk.QoS) error {
 	}
 	c.initOnce.Do(c.init)
 	_, sdkErr := c.sdkClient.ModifyQoSPolicy(context.TODO(), &req)
-	return sdkErr
+	if sdkErr != nil {
+		return sdkErr
+	}
+	return nil
 }
 
 func (c *Client) DeleteQoSPolicy(id int64) error {
@@ -48,7 +51,10 @@ func (c *Client) DeleteQoSPolicy(id int64) error {
 	}
 	c.initOnce.Do(c.init)
 	_, sdkErr := c.sdkClient.DeleteQoSPolicy(context.TODO(), &req)
-	return sdkErr
+	if sdkErr != nil {
+		return sdkErr
+	}
+	return nil
 }
 
 func (c *Client) ListQoSPolicies() ([]sdk.QoSPolicy, error) {

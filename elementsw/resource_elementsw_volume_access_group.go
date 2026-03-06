@@ -33,7 +33,7 @@ func resourceElementSwVolumeAccessGroup() *schema.Resource {
 				},
 			},
 			"attributes": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeMap,
 				Optional: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -68,7 +68,10 @@ func resourceElementSwVolumeAccessGroupCreate(d *schema.ResourceData, meta inter
 	client.initOnce.Do(client.init)
 	res, sdkErr := client.sdkClient.CreateVolumeAccessGroup(context.TODO(), &req)
 	if sdkErr != nil {
-		return sdkErr
+		if sdkErr != nil {
+			return sdkErr
+		}
+		return nil
 	}
 
 	d.SetId(fmt.Sprintf("%v", res.VolumeAccessGroupID))
@@ -90,7 +93,10 @@ func resourceElementSwVolumeAccessGroupRead(d *schema.ResourceData, meta interfa
 	client.initOnce.Do(client.init)
 	res, sdkErr := client.sdkClient.ListVolumeAccessGroups(context.TODO(), &req)
 	if sdkErr != nil {
-		return sdkErr
+		if sdkErr != nil {
+			return sdkErr
+		}
+		return nil
 	}
 
 	if len(res.VolumeAccessGroups) != 1 {
@@ -127,7 +133,10 @@ func resourceElementSwVolumeAccessGroupUpdate(d *schema.ResourceData, meta inter
 
 	client.initOnce.Do(client.init)
 	_, sdkErr := client.sdkClient.ModifyVolumeAccessGroup(context.TODO(), &req)
-	return sdkErr
+	if sdkErr != nil {
+		return sdkErr
+	}
+	return nil
 }
 
 func resourceElementSwVolumeAccessGroupDelete(d *schema.ResourceData, meta interface{}) error {
@@ -140,7 +149,10 @@ func resourceElementSwVolumeAccessGroupDelete(d *schema.ResourceData, meta inter
 	}
 	client.initOnce.Do(client.init)
 	_, sdkErr := client.sdkClient.DeleteVolumeAccessGroup(context.TODO(), &req)
-	return sdkErr
+	if sdkErr != nil {
+		return sdkErr
+	}
+	return nil
 }
 
 func resourceElementSwVolumeAccessGroupExists(d *schema.ResourceData, meta interface{}) (bool, error) {

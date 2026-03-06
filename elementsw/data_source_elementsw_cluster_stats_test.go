@@ -14,10 +14,10 @@ func TestAccDataSourceElementSwClusterStats_basic(t *testing.T) {
 			{
 				Config: testAccDataSourceElementSwClusterStatsConfig,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("data.elementsw_cluster_stats.test", "volume_count"),
-					resource.TestCheckResourceAttrSet("data.elementsw_cluster_stats.test", "node_count"),
-					resource.TestCheckResourceAttrSet("data.elementsw_cluster_stats.test", "capacity.0.used_space"),
-					resource.TestCheckResourceAttrSet("data.elementsw_cluster_stats.test", "metrics.0.actual_iops"),
+					resource.TestCheckResourceAttrSet("data.solidfire_cluster_stats.test", "volume_count"),
+					resource.TestCheckResourceAttrSet("data.solidfire_cluster_stats.test", "node_count"),
+					resource.TestCheckResourceAttrSet("data.solidfire_cluster_stats.test", "capacity.0.used_space"),
+					resource.TestCheckResourceAttrSet("data.solidfire_cluster_stats.test", "metrics.0.actual_iops"),
 				),
 			},
 		},
@@ -25,5 +25,5 @@ func TestAccDataSourceElementSwClusterStats_basic(t *testing.T) {
 }
 
 const testAccDataSourceElementSwClusterStatsConfig = `
-data "elementsw_cluster_stats" "test" {}
+data "solidfire_cluster_stats" "test" {}
 `

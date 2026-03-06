@@ -14,22 +14,22 @@ test: fmtcheck
 		xargs -t -n4 go test $(TESTARGS) -timeout=30s -parallel=4
 
 testacc: fmtcheck
-	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m
+	TF_ACC=1 SOLIDFIRE_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 15m
 
 testacc-qos-policy: fmtcheck
-	TF_ACC=1 go test ./elementsw -v -run TestAccElementswQoSPolicy
+	TF_ACC=1 SOLIDFIRE_ACC=1 go test ./elementsw -v -run TestAccElementswQoSPolicy
 
 testacc-volume: fmtcheck
-	TF_ACC=1 go test ./elementsw -v -run TestAccElementswVolume
+	TF_ACC=1 SOLIDFIRE_ACC=1 go test ./elementsw -v -run TestVolume
 
 testacc-account: fmtcheck
-	TF_ACC=1 go test ./elementsw -v -run TestAccount_
+	TF_ACC=1 SOLIDFIRE_ACC=1 go test ./elementsw -v -run TestAccount_
 
 testacc-initiator: fmtcheck
-	TF_ACC=1 go test ./elementsw -v -run TestAccElementswInitiator
+	TF_ACC=1 SOLIDFIRE_ACC=1 go test ./elementsw -v -run TestInitiator
 
 testacc-pairing: fmtcheck
-	TF_ACC=1 go test ./elementsw -v -run TestAccElementsw.*Pairing
+	TF_ACC=1 SOLIDFIRE_ACC=1 go test ./elementsw -v -run TestAccElementsw.*Pairing
 
 vet:
 	@echo "go vet ."

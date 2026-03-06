@@ -19,12 +19,12 @@ func TestAccDataSourceElementSwCluster_basic(t *testing.T) {
 			{
 				Config: testAccDataSourceElementSwClusterConfig,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("data.elementsw_cluster.test", "name"),
-					resource.TestCheckResourceAttrSet("data.elementsw_cluster.test", "unique_id"),
-					resource.TestCheckResourceAttrSet("data.elementsw_cluster.test", "cluster_version"),
-					resource.TestCheckResourceAttrSet("data.elementsw_cluster.test", "cluster_api_version"),
-					resource.TestCheckResourceAttrSet("data.elementsw_cluster.test", "mvip"),
-					resource.TestCheckResourceAttrSet("data.elementsw_cluster.test", "svip"),
+					resource.TestCheckResourceAttrSet("data.solidfire_cluster.test", "name"),
+					resource.TestCheckResourceAttrSet("data.solidfire_cluster.test", "unique_id"),
+					resource.TestCheckResourceAttrSet("data.solidfire_cluster.test", "cluster_version"),
+					resource.TestCheckResourceAttrSet("data.solidfire_cluster.test", "cluster_api_version"),
+					resource.TestCheckResourceAttrSet("data.solidfire_cluster.test", "mvip"),
+					resource.TestCheckResourceAttrSet("data.solidfire_cluster.test", "svip"),
 				),
 			},
 		},
@@ -32,5 +32,5 @@ func TestAccDataSourceElementSwCluster_basic(t *testing.T) {
 }
 
 const testAccDataSourceElementSwClusterConfig = `
-data "elementsw_cluster" "test" {}
+data "solidfire_cluster" "test" {}
 `

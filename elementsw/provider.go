@@ -11,51 +11,51 @@ func Provider() *schema.Provider {
 			"username": {
 				Type:        schema.TypeString,
 				Required:    true,
-				DefaultFunc: schema.EnvDefaultFunc("ELEMENTSW_USERNAME", nil),
+				DefaultFunc: schema.EnvDefaultFunc("SOLIDFIRE_USERNAME", nil),
 				Description: "The user name for ElementSW API operations.",
 			},
 			"password": {
 				Type:        schema.TypeString,
 				Required:    true,
-				DefaultFunc: schema.EnvDefaultFunc("ELEMENTSW_PASSWORD", nil),
+				DefaultFunc: schema.EnvDefaultFunc("SOLIDFIRE_PASSWORD", nil),
 				Description: "The user password for ElementSW API operations.",
 			},
-			"elementsw_server": {
+			"solidfire_server": {
 				Type:        schema.TypeString,
 				Required:    true,
-				DefaultFunc: schema.EnvDefaultFunc("ELEMENTSW_SERVER", nil),
+				DefaultFunc: schema.EnvDefaultFunc("SOLIDFIRE_SERVER", nil),
 				Description: "The ElementSW server name for ElementSW API operations.",
 			},
 			"api_version": {
 				Type:        schema.TypeString,
 				Required:    true,
-				DefaultFunc: schema.EnvDefaultFunc("ELEMENTSW_API_VERSION", nil),
+				DefaultFunc: schema.EnvDefaultFunc("SOLIDFIRE_API_VERSION", nil),
 				Description: "The ElementSW server API version.",
 			},
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"elementsw_volume_access_group": resourceElementSwVolumeAccessGroup(),
-			"elementsw_initiator":           resourceElementSwInitiator(),
-			"elementsw_volume":              resourceElementSwVolume(),
-			"elementsw_account":             resourceElementSwAccount(),
-			"elementsw_qos_policy":          resourceElementswQoSPolicy(),
-			"elementsw_schedule":            resourceElementswSchedule(),
-			"elementsw_snapshot":            resourceElementswSnapshot(),
-			"elementsw_cluster_pairing":     resourceElementSwClusterPairing(),
-			"elementsw_volume_pairing":      resourceElementSwVolumePairing(),
+			"solidfire_volume_access_group": resourceElementSwVolumeAccessGroup(),
+			"solidfire_initiator":           resourceElementSwInitiator(),
+			"solidfire_volume":              resourceElementSwVolume(),
+			"solidfire_account":             resourceElementSwAccount(),
+			"solidfire_qos_policy":          resourceElementswQoSPolicy(),
+			"solidfire_schedule":            resourceElementswSchedule(),
+			"solidfire_snapshot":            resourceElementswSnapshot(),
+			"solidfire_cluster_pairing":     resourceElementSwClusterPairing(),
+			"solidfire_volume_pairing":      resourceElementSwVolumePairing(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
-			"elementsw_cluster":             dataSourceElementSwCluster(),
-			"elementsw_account":             dataSourceElementSwAccount(),
-			"elementsw_volume":              dataSourceElementSwVolume(),
-			"elementsw_volume_iqn":          dataSourceElementSwVolumeIQN(),
-			"elementsw_cluster_stats":       dataSourceElementSwClusterStats(),
-			"elementsw_volumes_by_account":  dataSourceElementswVolumesByAccount(),
-			"elementsw_qos_policy":          dataSourceElementSwQosPolicy(),
-			"elementsw_initiator":           dataSourceElementSwInitiator(),
-			"elementsw_volume_access_group": dataSourceElementSwVolumeAccessGroup(),
+			"solidfire_cluster":             dataSourceElementSwCluster(),
+			"solidfire_account":             dataSourceElementSwAccount(),
+			"solidfire_volume":              dataSourceElementSwVolume(),
+			"solidfire_volume_iqn":          dataSourceElementSwVolumeIQN(),
+			"solidfire_cluster_stats":       dataSourceElementSwClusterStats(),
+			"solidfire_volumes_by_account":  dataSourceElementswVolumesByAccount(),
+			"solidfire_qos_policy":          dataSourceElementSwQosPolicy(),
+			"solidfire_initiator":           dataSourceElementSwInitiator(),
+			"solidfire_volume_access_group": dataSourceElementSwVolumeAccessGroup(),
 		},
 
 		ConfigureFunc: providerConfigure,
@@ -63,7 +63,7 @@ func Provider() *schema.Provider {
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-	server := d.Get("elementsw_server").(string)
+	server := d.Get("solidfire_server").(string)
 	version := d.Get("api_version").(string)
 	user := d.Get("username").(string)
 	config := configStuct{

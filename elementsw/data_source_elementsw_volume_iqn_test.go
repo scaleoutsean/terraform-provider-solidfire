@@ -19,8 +19,8 @@ func TestAccDataSourceElementSwVolumeIQN_basic(t *testing.T) {
 			{
 				Config: testAccDataSourceElementSwVolumeIQNConfig,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("data.elementsw_volume_iqn.test", "iqn"),
-					resource.TestCheckResourceAttrSet("data.elementsw_volume_iqn.test", "target_portal"),
+					resource.TestCheckResourceAttrSet("data.solidfire_volume_iqn.test", "iqn"),
+					resource.TestCheckResourceAttrSet("data.solidfire_volume_iqn.test", "target_portal"),
 				),
 			},
 		},
@@ -28,7 +28,7 @@ func TestAccDataSourceElementSwVolumeIQN_basic(t *testing.T) {
 }
 
 const testAccDataSourceElementSwVolumeIQNConfig = `
-data "elementsw_volume_iqn" "test" {
+data "solidfire_volume_iqn" "test" {
   unique_id  = "xh67"
   name       = "myvol"
   volume_id  = 1234

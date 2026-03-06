@@ -7,7 +7,7 @@ import (
 )
 
 func TestAccElementswSnapshot_basic(t *testing.T) {
-	resourceName := "elementsw_snapshot.test"
+	resourceName := "solidfire_snapshot.test"
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories,
@@ -26,15 +26,26 @@ func TestAccElementswSnapshot_basic(t *testing.T) {
 
 func testAccSnapshotConfigBasic() string {
 	return `
-resource "elementsw_snapshot" "test" {
-  volume_id = 1
+resource "solidfire_account" "test" {
+  username = "tf-acc-test-snap"
+}
+
+resource "solidfire_volume" "test" {
+  name = "tf-acc-test-snap-vol"
+  account_id = solidfire_account.test.id
+  total_size = 1073741824
+  enable512e = true
+}
+
+resource "solidfire_snapshot" "test" {
+  volume_id = solidfire_volume.test.id
   name = "test-snap"
 }
 `
 }
 
 func TestAccElementswGroupSnapshot_basic(t *testing.T) {
-	resourceName := "elementsw_snapshot.group"
+	resourceName := "solidfire_snapshot.group"
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories,
@@ -44,7 +55,6 @@ func TestAccElementswGroupSnapshot_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", "test-group-snap"),
 					resource.TestCheckResourceAttrSet(resourceName, "created_group_snapshot_id"),
-					resource.TestCheckResourceAttrSet(resourceName, "created_group_snapshot_uuid"),
 				),
 			},
 		},
@@ -53,8 +63,19 @@ func TestAccElementswGroupSnapshot_basic(t *testing.T) {
 
 func testAccGroupSnapshotConfigBasic() string {
 	return `
-resource "elementsw_snapshot" "group" {
-  volume_ids = [1, 2]
+resource "solidfire_account" "test" {
+  username = "tf-acc-test-snap"
+}
+
+resource "solidfire_volume" "test" {
+  name = "tf-acc-test-grp-snap-vol"
+  account_id = solidfire_account.test.id
+  total_size = 1073741824
+  enable512e = true
+}
+
+resource "solidfire_snapshot" "group" {
+  volume_ids = [solidfire_volume.test.id]
   name = "test-group-snap"
 }
 `

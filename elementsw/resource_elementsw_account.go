@@ -42,7 +42,7 @@ func resourceElementSwAccount() *schema.Resource {
 				Sensitive: true,
 			},
 			"attributes": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeMap,
 				Optional: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,

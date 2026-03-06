@@ -1,0 +1,34 @@
+# Specify ElementSW resources
+resource "solidfire_account" "test-account" {
+  provider         = netapp-elementsw
+  username         = var.solidfire_tenant_name
+  target_secret    = var.solidfire_tenant_target_secret
+  initiator_secret = var.solidfire_tenant_initiator_secret
+}
+
+resource "solidfire_volume" "test-volume" {
+  # Create N instances
+  count      = length(var.volume_size_list)
+  provider   = netapp-elementsw
+  name       = "${var.volume_name}-${count.index}"
+  account    = solidfire_account.test-account.id
+  total_size = var.volume_size_list[count.index]
+  enable512e = var.sectorsize_512e
+  min_iops   = var.qos.min
+  max_iops   = var.qos.max
+  burst_iops = var.qos.burst
+}
+
+resource "solidfire_volume_access_group" "test-group" {
+  provider = netapp-elementsw
+  name     = var.volume_group_name
+  volumes  = solidfire_volume.test-volume.*.id
+}
+
+resource "solidfire_initiator" "test-initiator" {
+  provider               = netapp-elementsw
+  name                   = var.solidfire_initiator.name
+  alias                  = var.solidfire_initiator.alias
+  volume_access_group_id = solidfire_volume_access_group.test-group.id
+  iqns                   = solidfire_volume.test-volume.*.iqn
+}

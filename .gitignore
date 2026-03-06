@@ -9,3 +9,4 @@ RELEASE.md
 examples/elementsw/terraform.tfstate*
 examples/elementsw/terraform.tfvars
 examples/elementsw/.terraform/
+dist/

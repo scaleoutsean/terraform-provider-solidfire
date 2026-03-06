@@ -8,62 +8,60 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetQoSPolicy(t *testing.T) {
-	if os.Getenv("TF_ACC") == "" {
-		t.Skip("Skipping TestGetQoSPolicy; TF_ACC not set")
+func getTestClient() *Client {
+	c := &configStuct{
+		User:            os.Getenv("SOLIDFIRE_USERNAME"),
+		Password:        os.Getenv("SOLIDFIRE_PASSWORD"),
+		ElementSwServer: os.Getenv("SOLIDFIRE_SERVER"),
+		APIVersion:      os.Getenv("SOLIDFIRE_API_VERSION"),
 	}
-	client := &Client{} // TODO: mock or initialize with test config
-
-	result, err := client.GetQoSPolicy(1)
-	assert.NoError(t, err)
-	assert.Equal(t, int64(1), result.QosPolicyID)
-	assert.NotEmpty(t, result.Name)
-	assert.NotNil(t, result.Qos)
+	client, err := c.clientFun()
+	if err != nil {
+		panic(err)
+	}
+	return client
 }
 
-func TestListQoSPolicies(t *testing.T) {
+func TestQoSPolicyLifecycle(t *testing.T) {
 	if os.Getenv("TF_ACC") == "" {
-		t.Skip("Skipping TestListQoSPolicies; TF_ACC not set")
+		t.Skip("Skipping TestQoSPolicyLifecycle; TF_ACC not set")
 	}
-	client := &Client{} // TODO: mock or initialize with test config
+	client := getTestClient()
 
-	result, err := client.ListQoSPolicies()
-	assert.NoError(t, err)
-	assert.NotEmpty(t, result)
-}
-
-func TestCreateQoSPolicy(t *testing.T) {
-	if os.Getenv("TF_ACC") == "" {
-		t.Skip("Skipping TestCreateQoSPolicy; TF_ACC not set")
-	}
-	client := &Client{} // TODO: mock or initialize with test config
 	qos := sdk.QoS{
 		MinIOPS:   100,
 		MaxIOPS:   200,
 		BurstIOPS: 300,
 	}
-	id, err := client.CreateQoSPolicy("test-policy", qos)
+
+	// Create
+	id, err := client.CreateQoSPolicy("test-policy-lifecycle", qos)
 	assert.NoError(t, err)
 	assert.True(t, id > 0)
-}
 
-func TestModifyQoSPolicy(t *testing.T) {
-	if os.Getenv("TF_ACC") == "" {
-		t.Skip("Skipping TestModifyQoSPolicy; TF_ACC not set")
-	}
-	client := &Client{} // TODO: mock or initialize with test config
-	qos := sdk.QoS{
-		MinIOPS: 150,
-	}
-	err := client.ModifyQoSPolicy(1, "updated-policy", qos)
+	// Get
+	result, err := client.GetQoSPolicy(id)
 	assert.NoError(t, err)
-}
-
-func TestDeleteQoSPolicy(t *testing.T) {
-	if os.Getenv("TF_ACC") == "" {
-		t.Skip("Skipping TestDeleteQoSPolicy; TF_ACC not set")
+	if result != nil {
+		assert.Equal(t, id, result.QosPolicyID)
+		assert.Equal(t, "test-policy-lifecycle", result.Name)
 	}
-	client := &Client{} // TODO: mock or initialize with test config
-	err := client.DeleteQoSPolicy(1)
+
+	// Modify
+	qosUpdate := sdk.QoS{
+		MinIOPS:   150,
+		MaxIOPS:   250,
+		BurstIOPS: 350,
+	}
+	err = client.ModifyQoSPolicy(id, "updated-policy-lifecycle", qosUpdate)
+	assert.NoError(t, err)
+
+	// List
+	listResult, err := client.ListQoSPolicies()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, listResult)
+
+	// Delete
+	err = client.DeleteQoSPolicy(id)
 	assert.NoError(t, err)
 }

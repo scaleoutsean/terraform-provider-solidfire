@@ -22,20 +22,20 @@ func TestVolume_basic(t *testing.T) {
 				Config: fmt.Sprintf(
 					testAccCheckElementSwVolumeConfig,
 					"terraform-acceptance-test",
-					"1000000000",
+					"2000683008",
 					"true",
 					"500",
 					"10000",
 					"10000",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckElementSwVolumeExists("elementsw_volume.terraform-acceptance-test-1", &volume),
-					resource.TestCheckResourceAttr("elementsw_volume.terraform-acceptance-test-1", "name", "terraform-acceptance-test"),
-					resource.TestCheckResourceAttr("elementsw_volume.terraform-acceptance-test-1", "total_size", "1000000000"),
-					resource.TestCheckResourceAttr("elementsw_volume.terraform-acceptance-test-1", "enable512e", "true"),
-					resource.TestCheckResourceAttr("elementsw_volume.terraform-acceptance-test-1", "min_iops", "500"),
-					resource.TestCheckResourceAttr("elementsw_volume.terraform-acceptance-test-1", "max_iops", "10000"),
-					resource.TestCheckResourceAttr("elementsw_volume.terraform-acceptance-test-1", "burst_iops", "10000"),
+					testAccCheckElementSwVolumeExists("solidfire_volume.terraform-acceptance-test-1", &volume),
+					resource.TestCheckResourceAttr("solidfire_volume.terraform-acceptance-test-1", "name", "terraform-acceptance-test"),
+					resource.TestCheckResourceAttr("solidfire_volume.terraform-acceptance-test-1", "total_size", "2000683008"),
+					resource.TestCheckResourceAttr("solidfire_volume.terraform-acceptance-test-1", "enable512e", "true"),
+					resource.TestCheckResourceAttr("solidfire_volume.terraform-acceptance-test-1", "min_iops", "500"),
+					resource.TestCheckResourceAttr("solidfire_volume.terraform-acceptance-test-1", "max_iops", "10000"),
+					resource.TestCheckResourceAttr("solidfire_volume.terraform-acceptance-test-1", "burst_iops", "10000"),
 				),
 			},
 		},
@@ -46,7 +46,7 @@ func testAccCheckElementSwVolumeDestroy(s *terraform.State) error {
 	virConn := testAccProvider.Meta().(*Client)
 
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "elementsw_volume" {
+		if rs.Type != "solidfire_volume" {
 			continue
 		}
 		id, _ := strconv.ParseInt(rs.Primary.ID, 10, 64)
@@ -91,9 +91,9 @@ func testAccCheckElementSwVolumeExists(n string, volume *sdk.Volume) resource.Te
 }
 
 const testAccCheckElementSwVolumeConfig = `
-resource "elementsw_volume" "terraform-acceptance-test-1" {
+resource "solidfire_volume" "terraform-acceptance-test-1" {
 	name = "%s"
-	account_id = elementsw_account.terraform-acceptance-test-1.id
+	account_id = solidfire_account.terraform-acceptance-test-1.id
 	total_size = "%s"
 	enable512e = "%s"
 	min_iops = "%s"
@@ -103,7 +103,7 @@ resource "elementsw_volume" "terraform-acceptance-test-1" {
 		foo = "bar"
 	}
 }
-resource "elementsw_account" "terraform-acceptance-test-1" {
+resource "solidfire_account" "terraform-acceptance-test-1" {
 	username = "terraform-acceptance-test-volume"
 }
 `

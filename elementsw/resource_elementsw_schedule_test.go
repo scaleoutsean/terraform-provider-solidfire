@@ -8,7 +8,7 @@ import (
 )
 
 func TestAccElementswSchedule_basic(t *testing.T) {
-	resourceName := "elementsw_schedule.test"
+	resourceName := "solidfire_schedule.test"
 	scheduleName := "tfacc-schedule"
 
 	resource.Test(t, resource.TestCase{
@@ -19,13 +19,14 @@ func TestAccElementswSchedule_basic(t *testing.T) {
 				Config: testAccScheduleConfig(scheduleName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "schedule_name", scheduleName),
-					resource.TestCheckResourceAttr(resourceName, "schedule_type", "snapshot"),
+					resource.TestCheckResourceAttr(resourceName, "schedule_type", "Snapshot"),
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"attributes", "schedule_info"},
 			},
 		},
 	})
@@ -33,16 +34,27 @@ func TestAccElementswSchedule_basic(t *testing.T) {
 
 func testAccScheduleConfig(name string) string {
 	return fmt.Sprintf(`
-resource "elementsw_schedule" "test" {
+resource "solidfire_account" "test" {
+  username = "tf-acc-test-sched"
+}
+
+resource "solidfire_volume" "test" {
+  name = "tf-acc-test-sched-vol"
+  account_id = solidfire_account.test.id
+  total_size = 1073741824
+  enable512e = true
+}
+
+resource "solidfire_schedule" "test" {
   schedule_name = "%s"
-  schedule_type = "snapshot"
+  schedule_type = "Snapshot"
   attributes = {
     frequency = "Time Interval"
   }
   minutes = 10
   schedule_info = {
     retention = "0:10:00"
-    volumeID = 1
+    volumeID = "${solidfire_volume.test.id}"
   }
   paused = false
   recurring = true

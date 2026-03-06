@@ -43,7 +43,27 @@ If you wish to contribute to the provider, you'll need [Go](https://golang.org/)
 
 1. Clone the repository.
 2. Run `make build` to compile the provider plugin.
-3. Configure `.tf-elementsw-devrc.mk` (copy `.tf-elementsw-devrc.mk.example` as a template).
-4. Run `make testacc` to run acceptance tests against a live SolidFire cluster.
+3. Set the required environment variables, including `TF_ACC=1` to enable Terraform Acceptance Tests, and `SOLIDFIRE_ACC=1` for provider-specific protections. 
+4. Run `go test ./... -v -timeout 15m` to run acceptance tests against a live SolidFire cluster.
+
+```sh
+export SOLIDFIRE_SERVER="elementsw.cluster.ipv4"
+export SOLIDFIRE_USERNAME="admin"
+export SOLIDFIRE_PASSWORD="changeme"
+export SOLIDFIRE_API_VERSION="12.5"
+export TF_ACC="1"
+# Some provider tests require this additional flag to run safely
+export SOLIDFIRE_ACC="1" 
+go test ./... -v -timeout 15m
+```
+
+To test two clusters (cluster and volume pairing), provide environment variables for the second cluster:
+
+```sh
+export SOLIDFIRE_SERVER_DR=...
+export SOLIDFIRE_USERNAME_DR=...
+export SOLIDFIRE_PASSWORD_DR=...
+export SOLIDFIRE_API_VERSION_DR="12.5"
+```
 
 Please submit issues or pull requests to the [GitHub repository](https://github.com/scaleoutsean/terraform-provider-solidfire).

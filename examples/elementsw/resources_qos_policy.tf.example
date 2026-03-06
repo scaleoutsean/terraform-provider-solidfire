@@ -1,3 +1,0 @@
-resource "elementsw_qos_policy" "example" {
-  # No arguments needed for listing
-}

@@ -14,6 +14,9 @@ func resourceElementswSchedule() *schema.Resource {
 		Read:   resourceElementswScheduleRead,
 		Update: resourceElementswScheduleUpdate,
 		Delete: resourceElementswScheduleDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 		Schema: map[string]*schema.Schema{
 			"schedule_name": {
 				Type:     schema.TypeString,

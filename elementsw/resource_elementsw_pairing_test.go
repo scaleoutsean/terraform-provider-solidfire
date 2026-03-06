@@ -15,34 +15,34 @@ import (
 func TestAccElementswVolumePairing_automated(t *testing.T) {
 	timestamp := time.Now().Unix()
 	timestampStr := fmt.Sprintf("%d", timestamp)
-	drServer := os.Getenv("ELEMENTSW_SERVER_DR")
+	drServer := os.Getenv("SOLIDFIRE_SERVER_DR")
 	if drServer == "" {
-		t.Skip("ELEMENTSW_SERVER_DR not set, skipping replication tests")
+		t.Skip("SOLIDFIRE_SERVER_DR not set, skipping replication tests")
 	}
 
-	srcServer := os.Getenv("ELEMENTSW_SERVER")
+	srcServer := os.Getenv("SOLIDFIRE_SERVER")
 	if srcServer == "" {
 		srcServer = "192.168.1.30"
 	}
 	if srcServer == drServer {
 		t.Fatalf("srcServer and drServer are both %s", srcServer)
 	}
-	srcUser := os.Getenv("ELEMENTSW_USERNAME")
-	srcPass := os.Getenv("ELEMENTSW_PASSWORD")
-	srcVer := os.Getenv("ELEMENTSW_API_VERSION")
+	srcUser := os.Getenv("SOLIDFIRE_USERNAME")
+	srcPass := os.Getenv("SOLIDFIRE_PASSWORD")
+	srcVer := os.Getenv("SOLIDFIRE_API_VERSION")
 	if srcVer == "" {
 		srcVer = "12.5"
 	}
 
-	drUser := os.Getenv("ELEMENTSW_USERNAME_DR")
+	drUser := os.Getenv("SOLIDFIRE_USERNAME_DR")
 	if drUser == "" {
 		drUser = srcUser
 	}
-	drPass := os.Getenv("ELEMENTSW_PASSWORD_DR")
+	drPass := os.Getenv("SOLIDFIRE_PASSWORD_DR")
 	if drPass == "" {
 		drPass = srcPass
 	}
-	drVer := os.Getenv("ELEMENTSW_API_VERSION_DR")
+	drVer := os.Getenv("SOLIDFIRE_API_VERSION_DR")
 	if drVer == "" {
 		drVer = srcVer
 	}
@@ -56,8 +56,8 @@ func TestAccElementswVolumePairing_automated(t *testing.T) {
 			{
 				Config: testAccVolumePairingConfig(timestampStr, srcServer, srcVer, srcUser, srcPass, drServer, drVer, drUser, drPass),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("elementsw_volume_pairing.test", "pairing_key"),
-					testAccVerifyVolumePairingBothSides("elementsw_volume.src", "elementsw_volume.dr"),
+					resource.TestCheckResourceAttrSet("solidfire_volume_pairing.test", "pairing_key"),
+					testAccVerifyVolumePairingBothSides("solidfire_volume.src", "solidfire_volume.dr"),
 				),
 			},
 		},
@@ -80,10 +80,10 @@ func testAccVerifyVolumePairingBothSides(srcRes, drRes string) resource.TestChec
 
 		// 1. Verify Source is readWrite and paired
 		srcConfig := configStuct{
-			User:            os.Getenv("ELEMENTSW_USERNAME"),
-			Password:        os.Getenv("ELEMENTSW_PASSWORD"),
-			ElementSwServer: os.Getenv("ELEMENTSW_SERVER"),
-			APIVersion:      os.Getenv("ELEMENTSW_API_VERSION"),
+			User:            os.Getenv("SOLIDFIRE_USERNAME"),
+			Password:        os.Getenv("SOLIDFIRE_PASSWORD"),
+			ElementSwServer: os.Getenv("SOLIDFIRE_SERVER"),
+			APIVersion:      os.Getenv("SOLIDFIRE_API_VERSION"),
 		}
 		if srcConfig.APIVersion == "" {
 			srcConfig.APIVersion = "12.5"
@@ -102,20 +102,20 @@ func testAccVerifyVolumePairingBothSides(srcRes, drRes string) resource.TestChec
 		}
 
 		// 2. Verify DR is replicationTarget
-		drServer := os.Getenv("ELEMENTSW_SERVER_DR")
-		drUser := os.Getenv("ELEMENTSW_USERNAME_DR")
+		drServer := os.Getenv("SOLIDFIRE_SERVER_DR")
+		drUser := os.Getenv("SOLIDFIRE_USERNAME_DR")
 		if drUser == "" {
-			drUser = os.Getenv("ELEMENTSW_USERNAME")
+			drUser = os.Getenv("SOLIDFIRE_USERNAME")
 		}
-		drPass := os.Getenv("ELEMENTSW_PASSWORD_DR")
+		drPass := os.Getenv("SOLIDFIRE_PASSWORD_DR")
 		if drPass == "" {
-			drPass = os.Getenv("ELEMENTSW_PASSWORD")
+			drPass = os.Getenv("SOLIDFIRE_PASSWORD")
 		}
 		drConfig := configStuct{
 			User:            drUser,
 			Password:        drPass,
 			ElementSwServer: drServer,
-			APIVersion:      os.Getenv("ELEMENTSW_API_VERSION_DR"),
+			APIVersion:      os.Getenv("SOLIDFIRE_API_VERSION_DR"),
 		}
 		if drConfig.APIVersion == "" {
 			drConfig.APIVersion = srcConfig.APIVersion
@@ -161,46 +161,46 @@ func testAccVolumePairingConfig(timestamp string, srcServer, srcVer, srcUser, sr
 	drEndpoint := fmt.Sprintf("https://%s/json-rpc/%s", drServer, drVer)
 
 	hcl := fmt.Sprintf(`
-provider "elementsw" {
-  elementsw_server = "%s"
+provider "solidfire" {
+  solidfire_server = "%s"
   api_version      = "%s"
   username         = "%s"
   password         = "%s"
 }
 
-provider "elementswremote" {
-  elementsw_server = "%s"
+provider "solidfireremote" {
+  solidfire_server = "%s"
   api_version      = "%s"
   username         = "%s"
   password         = "%s"
 }
 
-resource "elementsw_account" "src" {
+resource "solidfire_account" "src" {
   username = "terraform-%s-src"
 }
 
-resource "elementsw_account" "dr" {
-  provider = elementswremote
+resource "solidfire_account" "dr" {
+  provider = solidfireremote
   username = "terraform-%s-dr"
 }
 
-resource "elementsw_volume" "src" {
+resource "solidfire_volume" "src" {
   name       = "terraform-%s-vol"
-  account_id = elementsw_account.src.account_id
+  account_id = solidfire_account.src.account_id
   total_size = 10000000000
   enable512e = true
 }
 
-resource "elementsw_volume" "dr" {
+resource "solidfire_volume" "dr" {
   provider   = elementswremote
   name       = "terraform-%s-vol" 
-  account_id = elementsw_account.dr.account_id
+  account_id = solidfire_account.dr.account_id
   total_size = 10000000000
   enable512e = true
 }
 
-resource "elementsw_volume_pairing" "test" {
-  volume_id  = elementsw_volume.src.id
+resource "solidfire_volume_pairing" "test" {
+  volume_id  = solidfire_volume.src.id
   mode       = "Async"
   
   target_cluster {
@@ -209,7 +209,7 @@ resource "elementsw_volume_pairing" "test" {
     password = "%s"
   }
 
-  depends_on = [elementsw_volume.dr]
+  depends_on = [solidfire_volume.dr]
 }
 `, srcServer, srcVer, srcUser, srcPass, drServer, drVer, drUser, drPass, timestamp, timestamp, timestamp, timestamp, drEndpoint, drUser, drPass)
 

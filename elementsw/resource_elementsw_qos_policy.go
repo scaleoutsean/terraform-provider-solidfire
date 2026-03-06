@@ -14,6 +14,9 @@ func resourceElementswQoSPolicy() *schema.Resource {
 		Read:   resourceElementswQoSPolicyRead,
 		Update: resourceElementswQoSPolicyUpdate,
 		Delete: resourceElementswQoSPolicyDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
@@ -50,12 +53,6 @@ func resourceElementswQoSPolicy() *schema.Resource {
 							Type:     schema.TypeInt,
 							Required: true,
 						},
-						"curve": {
-							Type:     schema.TypeMap,
-							Elem:     &schema.Schema{Type: schema.TypeInt},
-							Optional: true,
-							Computed: true,
-						},
 					},
 				},
 			},
@@ -76,6 +73,7 @@ func resourceElementswQoSPolicyCreate(d *schema.ResourceData, meta interface{}) 
 		MinIOPS:   int64(qosMap["min_iops"].(int)),
 		MaxIOPS:   int64(qosMap["max_iops"].(int)),
 		BurstIOPS: int64(qosMap["burst_iops"].(int)),
+		BurstTime: int64(qosMap["burst_time"].(int)),
 	}
 
 	qosPolicyID, err := client.CreateQoSPolicy(name, qos)
@@ -102,6 +100,7 @@ func resourceElementswQoSPolicyUpdate(d *schema.ResourceData, meta interface{}) 
 		MinIOPS:   int64(qosMap["min_iops"].(int)),
 		MaxIOPS:   int64(qosMap["max_iops"].(int)),
 		BurstIOPS: int64(qosMap["burst_iops"].(int)),
+		BurstTime: int64(qosMap["burst_time"].(int)),
 	}
 
 	err := client.ModifyQoSPolicy(qosPolicyID, name, qos)
@@ -145,7 +144,6 @@ func resourceElementswQoSPolicyRead(d *schema.ResourceData, meta interface{}) er
 		"burst_time": policy.Qos.BurstTime,
 		"max_iops":   policy.Qos.MaxIOPS,
 		"min_iops":   policy.Qos.MinIOPS,
-		"curve":      policy.Qos.Curve,
 	}
 	d.Set("qos", []interface{}{qosMap})
 

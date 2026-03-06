@@ -24,9 +24,9 @@ func TestInitiator_basic(t *testing.T) {
 					"terraform-acceptance-test-alias",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckElementSwInitiatorExists("elementsw_initiator.terraform-acceptance-test-1", &initiator),
-					resource.TestCheckResourceAttr("elementsw_initiator.terraform-acceptance-test-1", "name", "terraform-acceptance-test"),
-					resource.TestCheckResourceAttr("elementsw_initiator.terraform-acceptance-test-1", "alias", "terraform-acceptance-test-alias"),
+					testAccCheckElementSwInitiatorExists("solidfire_initiator.terraform-acceptance-test-1", &initiator),
+					resource.TestCheckResourceAttr("solidfire_initiator.terraform-acceptance-test-1", "name", "terraform-acceptance-test"),
+					resource.TestCheckResourceAttr("solidfire_initiator.terraform-acceptance-test-1", "alias", "terraform-acceptance-test-alias"),
 				),
 			},
 		},
@@ -47,9 +47,9 @@ func TestInitiator_update(t *testing.T) {
 					"terraform-acceptance-test-alias",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckElementSwInitiatorExists("elementsw_initiator.terraform-acceptance-test-1", &initiator),
-					resource.TestCheckResourceAttr("elementsw_initiator.terraform-acceptance-test-1", "name", "terraform-acceptance-test"),
-					resource.TestCheckResourceAttr("elementsw_initiator.terraform-acceptance-test-1", "alias", "terraform-acceptance-test-alias"),
+					testAccCheckElementSwInitiatorExists("solidfire_initiator.terraform-acceptance-test-1", &initiator),
+					resource.TestCheckResourceAttr("solidfire_initiator.terraform-acceptance-test-1", "name", "terraform-acceptance-test"),
+					resource.TestCheckResourceAttr("solidfire_initiator.terraform-acceptance-test-1", "alias", "terraform-acceptance-test-alias"),
 				),
 			},
 			{
@@ -59,9 +59,9 @@ func TestInitiator_update(t *testing.T) {
 					"terraform-acceptance-test-alias-update",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckElementSwInitiatorExists("elementsw_initiator.terraform-acceptance-test-1", &initiator),
-					resource.TestCheckResourceAttr("elementsw_initiator.terraform-acceptance-test-1", "name", "terraform-acceptance-test"),
-					resource.TestCheckResourceAttr("elementsw_initiator.terraform-acceptance-test-1", "alias", "terraform-acceptance-test-alias-update"),
+					testAccCheckElementSwInitiatorExists("solidfire_initiator.terraform-acceptance-test-1", &initiator),
+					resource.TestCheckResourceAttr("solidfire_initiator.terraform-acceptance-test-1", "name", "terraform-acceptance-test"),
+					resource.TestCheckResourceAttr("solidfire_initiator.terraform-acceptance-test-1", "alias", "terraform-acceptance-test-alias-update"),
 				),
 			},
 		},
@@ -82,9 +82,9 @@ func TestInitiator_removeVolumeAccessGroup(t *testing.T) {
 					"terraform-acceptance-test-alias",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckElementSwInitiatorExists("elementsw_initiator.terraform-acceptance-test-1", &initiator),
-					resource.TestCheckResourceAttr("elementsw_initiator.terraform-acceptance-test-1", "name", "terraform-acceptance-test"),
-					resource.TestCheckResourceAttr("elementsw_initiator.terraform-acceptance-test-1", "alias", "terraform-acceptance-test-alias"),
+					testAccCheckElementSwInitiatorExists("solidfire_initiator.terraform-acceptance-test-1", &initiator),
+					resource.TestCheckResourceAttr("solidfire_initiator.terraform-acceptance-test-1", "name", "terraform-acceptance-test"),
+					resource.TestCheckResourceAttr("solidfire_initiator.terraform-acceptance-test-1", "alias", "terraform-acceptance-test-alias"),
 				),
 			},
 			{
@@ -94,9 +94,9 @@ func TestInitiator_removeVolumeAccessGroup(t *testing.T) {
 					"terraform-acceptance-test-alias-update",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckElementSwInitiatorExists("elementsw_initiator.terraform-acceptance-test-1", &initiator),
-					resource.TestCheckResourceAttr("elementsw_initiator.terraform-acceptance-test-1", "name", "terraform-acceptance-test"),
-					resource.TestCheckResourceAttr("elementsw_initiator.terraform-acceptance-test-1", "alias", "terraform-acceptance-test-alias-update"),
+					testAccCheckElementSwInitiatorExists("solidfire_initiator.terraform-acceptance-test-1", &initiator),
+					resource.TestCheckResourceAttr("solidfire_initiator.terraform-acceptance-test-1", "name", "terraform-acceptance-test"),
+					resource.TestCheckResourceAttr("solidfire_initiator.terraform-acceptance-test-1", "alias", "terraform-acceptance-test-alias-update"),
 				),
 			},
 		},
@@ -107,7 +107,7 @@ func testAccCheckElementSwInitiatorDestroy(s *terraform.State) error {
 	virConn := testAccProvider.Meta().(*Client)
 
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "elementsw_initiator" {
+		if rs.Type != "solidfire_initiator" {
 			continue
 		}
 
@@ -154,31 +154,31 @@ func testAccCheckElementSwInitiatorExists(n string, initiator *initiator) resour
 }
 
 const testAccCheckElementSwInitiatorConfig = `
-resource "elementsw_initiator" "terraform-acceptance-test-1" {
+resource "solidfire_initiator" "terraform-acceptance-test-1" {
 	name = "%s"
 	alias = "%s"
-	volume_access_group_id = "${elementsw_volume_access_group.terraform-acceptance-test-1.id}"
+	volume_access_group_id = "${solidfire_volume_access_group.terraform-acceptance-test-1.id}"
 }
 
-resource "elementsw_volume_access_group" "terraform-acceptance-test-1" {
+resource "solidfire_volume_access_group" "terraform-acceptance-test-1" {
 	name = "terraform-acceptance-test-group"
 }
 `
 
 const testAccCheckElementSwInitiatorConfigUpdate = `
-resource "elementsw_initiator" "terraform-acceptance-test-1" {
+resource "solidfire_initiator" "terraform-acceptance-test-1" {
 	name = "%s"
 	alias = "%s"
-	volume_access_group_id = "${elementsw_volume_access_group.terraform-acceptance-test-2.id}"
+	volume_access_group_id = "${solidfire_volume_access_group.terraform-acceptance-test-2.id}"
 }
 
-resource "elementsw_volume_access_group" "terraform-acceptance-test-2" {
+resource "solidfire_volume_access_group" "terraform-acceptance-test-2" {
 	name = "terraform-acceptance-test-group-2"
 }
 `
 
 const testAccCheckElementSwInitiatorConfigRemoveVAG = `
-resource "elementsw_initiator" "terraform-acceptance-test-1" {
+resource "solidfire_initiator" "terraform-acceptance-test-1" {
 	name = "%s"
 	alias = "%s"
 }

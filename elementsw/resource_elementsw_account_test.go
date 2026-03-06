@@ -23,8 +23,8 @@ func TestAccount_basic(t *testing.T) {
 					"terraform-acceptance-test",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckElementSwAccountExists("elementsw_account.terraform-acceptance-account-1", &account),
-					resource.TestCheckResourceAttr("elementsw_account.terraform-acceptance-account-1", "username", "terraform-acceptance-test"),
+					testAccCheckElementSwAccountExists("solidfire_account.terraform-acceptance-account-1", &account),
+					resource.TestCheckResourceAttr("solidfire_account.terraform-acceptance-account-1", "username", "terraform-acceptance-test"),
 				),
 			},
 		},
@@ -46,10 +46,10 @@ func TestAccount_secrets(t *testing.T) {
 					"SecretSecret1",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckElementSwAccountExists("elementsw_account.terraform-acceptance-account-1", &account),
-					resource.TestCheckResourceAttr("elementsw_account.terraform-acceptance-account-1", "username", "terraform-acceptance-test"),
-					resource.TestCheckResourceAttr("elementsw_account.terraform-acceptance-account-1", "target_secret", "ABC123456XYZ"),
-					resource.TestCheckResourceAttr("elementsw_account.terraform-acceptance-account-1", "initiator_secret", "SecretSecret1"),
+					testAccCheckElementSwAccountExists("solidfire_account.terraform-acceptance-account-1", &account),
+					resource.TestCheckResourceAttr("solidfire_account.terraform-acceptance-account-1", "username", "terraform-acceptance-test"),
+					resource.TestCheckResourceAttr("solidfire_account.terraform-acceptance-account-1", "target_secret", "ABC123456XYZ"),
+					resource.TestCheckResourceAttr("solidfire_account.terraform-acceptance-account-1", "initiator_secret", "SecretSecret1"),
 				),
 			},
 		},
@@ -70,10 +70,10 @@ func TestAccount_update(t *testing.T) {
 					"SecretSecret1",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckElementSwAccountExists("elementsw_account.terraform-acceptance-account-1", &account),
-					resource.TestCheckResourceAttr("elementsw_account.terraform-acceptance-account-1", "username", "terraform-acceptance-test"),
-					resource.TestCheckResourceAttr("elementsw_account.terraform-acceptance-account-1", "target_secret", "ABC123456XYZ"),
-					resource.TestCheckResourceAttr("elementsw_account.terraform-acceptance-account-1", "initiator_secret", "SecretSecret1"),
+					testAccCheckElementSwAccountExists("solidfire_account.terraform-acceptance-account-1", &account),
+					resource.TestCheckResourceAttr("solidfire_account.terraform-acceptance-account-1", "username", "terraform-acceptance-test"),
+					resource.TestCheckResourceAttr("solidfire_account.terraform-acceptance-account-1", "target_secret", "ABC123456XYZ"),
+					resource.TestCheckResourceAttr("solidfire_account.terraform-acceptance-account-1", "initiator_secret", "SecretSecret1"),
 				),
 			},
 			{
@@ -82,8 +82,8 @@ func TestAccount_update(t *testing.T) {
 					"terraform-acceptance-test-update",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckElementSwAccountExists("elementsw_account.terraform-acceptance-account-1", &account),
-					resource.TestCheckResourceAttr("elementsw_account.terraform-acceptance-account-1", "username", "terraform-acceptance-test-update"),
+					testAccCheckElementSwAccountExists("solidfire_account.terraform-acceptance-account-1", &account),
+					resource.TestCheckResourceAttr("solidfire_account.terraform-acceptance-account-1", "username", "terraform-acceptance-test-update"),
 				),
 			},
 		},
@@ -93,7 +93,7 @@ func TestAccount_update(t *testing.T) {
 func testAccCheckElementSwAccountDestroy(s *terraform.State) error {
 	virConn := testAccProvider.Meta().(*Client)
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "elementsw_account" {
+		if rs.Type != "solidfire_account" {
 			continue
 		}
 
@@ -144,13 +144,13 @@ func testAccCheckElementSwAccountExists(n string, account *account) resource.Tes
 }
 
 const testAccCheckElementSwAccountConfig = `
-resource "elementsw_account" "terraform-acceptance-account-1" {
+resource "solidfire_account" "terraform-acceptance-account-1" {
 	username = "%s"
 }
 `
 
 const testAccCheckElementSwAccountConfigSecrets = `
-resource "elementsw_account" "terraform-acceptance-account-1" {
+resource "solidfire_account" "terraform-acceptance-account-1" {
 	username = "%s"
 	target_secret = "%s"
 	initiator_secret = "%s"
@@ -158,7 +158,7 @@ resource "elementsw_account" "terraform-acceptance-account-1" {
 `
 
 const testAccCheckElementSwAccountConfigUpdate = `
-resource "elementsw_account" "terraform-acceptance-account-1" {
+resource "solidfire_account" "terraform-acceptance-account-1" {
 	username = "%s"
 }
 `

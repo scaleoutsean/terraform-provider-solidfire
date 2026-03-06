@@ -7,7 +7,7 @@ require (
 	github.com/hashicorp/terraform-plugin-mux v0.22.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.38.2
 	github.com/hashicorp/terraform-plugin-testing v1.14.0
-	github.com/scaleoutsean/solidfire-go v1.0.0
+	github.com/scaleoutsean/solidfire-go v1.0.1
 	github.com/sirupsen/logrus v1.9.4
 	github.com/stretchr/testify v1.10.0
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2

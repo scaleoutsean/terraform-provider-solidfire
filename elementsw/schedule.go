@@ -33,7 +33,10 @@ func (c *Client) GetSchedule(id int64) (*sdk.Schedule, error) {
 func (c *Client) ModifySchedule(req *sdk.ModifyScheduleRequest) error {
 	c.initOnce.Do(c.init)
 	_, sdkErr := c.sdkClient.ModifySchedule(context.TODO(), req)
-	return sdkErr
+	if sdkErr != nil {
+		return sdkErr
+	}
+	return nil
 }
 
 func (c *Client) ListSchedules() ([]sdk.Schedule, error) {

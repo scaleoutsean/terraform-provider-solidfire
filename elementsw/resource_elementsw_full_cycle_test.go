@@ -17,52 +17,52 @@ func TestAccElementsw_FullCycle(t *testing.T) {
 			{
 				Config: testAccFullCycleConfig_Step1,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("elementsw_account.test", "id"),
-					resource.TestCheckResourceAttr("elementsw_account.test", "username", "tf-acc-test-account"),
-					resource.TestCheckResourceAttrSet("elementsw_qos_policy.test", "id"),
-					resource.TestCheckResourceAttr("elementsw_qos_policy.test", "name", "tf-acc-test-policy"),
+					resource.TestCheckResourceAttrSet("solidfire_account.test", "id"),
+					resource.TestCheckResourceAttr("solidfire_account.test", "username", "tf-acc-test-account-2"),
+					resource.TestCheckResourceAttrSet("solidfire_qos_policy.test", "id"),
+					resource.TestCheckResourceAttr("solidfire_qos_policy.test", "name", "tf-acc-test-policy"),
 				),
 			},
 			// Step 2: Add Volume
 			{
 				Config: testAccFullCycleConfig_Step2,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("elementsw_volume.test", "id"),
-					resource.TestCheckResourceAttr("elementsw_volume.test", "name", "tf-acc-test-volume"),
-					resource.TestCheckResourceAttr("elementsw_volume.test", "total_size", "1000000000"),
-					testAccCheckVolumeQoSPolicyID("elementsw_volume.test", "elementsw_qos_policy.test"),
+					resource.TestCheckResourceAttrSet("solidfire_volume.test", "id"),
+					resource.TestCheckResourceAttr("solidfire_volume.test", "name", "tf-acc-test-volume"),
+					resource.TestCheckResourceAttr("solidfire_volume.test", "total_size", "1073741824"),
+					testAccCheckVolumeQoSPolicyID("solidfire_volume.test", "solidfire_qos_policy.test"),
 				),
 			},
 			// Step 3: Add Volume Access Group
 			{
 				Config: testAccFullCycleConfig_Step3,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("elementsw_volume_access_group.test", "id"),
-					resource.TestCheckResourceAttr("elementsw_volume_access_group.test", "name", "tf-acc-test-vag"),
-					resource.TestCheckResourceAttr("elementsw_volume_access_group.test", "volumes.#", "1"),
-					resource.TestCheckResourceAttrSet("elementsw_initiator.test", "id"),
+					resource.TestCheckResourceAttrSet("solidfire_volume_access_group.test", "id"),
+					resource.TestCheckResourceAttr("solidfire_volume_access_group.test", "name", "tf-acc-test-vag"),
+					resource.TestCheckResourceAttr("solidfire_volume_access_group.test", "volumes.#", "1"),
+					resource.TestCheckResourceAttrSet("solidfire_initiator.test", "id"),
 				),
 			},
 			// Step 4: Add Schedule
 			{
 				Config: testAccFullCycleConfig_Step4,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("elementsw_schedule.test", "id"),
-					resource.TestCheckResourceAttr("elementsw_schedule.test", "schedule_name", "tf-acc-test-schedule"),
+					resource.TestCheckResourceAttrSet("solidfire_schedule.test", "id"),
+					resource.TestCheckResourceAttr("solidfire_schedule.test", "schedule_name", "tf-acc-test-schedule"),
 				),
 			},
 			// Step 5: Update Volume Size
 			{
 				Config: testAccFullCycleConfig_Step5,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("elementsw_volume.test", "total_size", "2000000000"),
+					resource.TestCheckResourceAttr("solidfire_volume.test", "total_size", "2000683008"),
 				),
 			},
 			// Step 6: Update QoS Policy
 			{
 				Config: testAccFullCycleConfig_Step6,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("elementsw_qos_policy.test", "qos.0.min_iops", "100"),
+					resource.TestCheckResourceAttr("solidfire_qos_policy.test", "qos.0.min_iops", "100"),
 				),
 			},
 		},
@@ -89,11 +89,11 @@ func testAccCheckVolumeQoSPolicyID(volResource, qosResource string) resource.Tes
 }
 
 const testAccFullCycleConfig_Step1 = `
-resource "elementsw_account" "test" {
-  username = "tf-acc-test-account"
+resource "solidfire_account" "test" {
+  username = "tf-acc-test-account-2"
 }
 
-resource "elementsw_qos_policy" "test" {
+resource "solidfire_qos_policy" "test" {
   name = "tf-acc-test-policy"
   qos {
     min_iops = 50
@@ -105,29 +105,29 @@ resource "elementsw_qos_policy" "test" {
 `
 
 const testAccFullCycleConfig_Step2 = testAccFullCycleConfig_Step1 + `
-resource "elementsw_volume" "test" {
+resource "solidfire_volume" "test" {
   name = "tf-acc-test-volume"
-  account_id = elementsw_account.test.id
-  total_size = 1000000000
+  account_id = solidfire_account.test.id
+  total_size = 1073741824
   enable512e = true
-  qos_policy_id = elementsw_qos_policy.test.id
+  qos_policy_id = solidfire_qos_policy.test.id
 }
 `
 
 const testAccFullCycleConfig_Step3 = testAccFullCycleConfig_Step2 + `
-resource "elementsw_volume_access_group" "test" {
+resource "solidfire_volume_access_group" "test" {
   name = "tf-acc-test-vag"
-  volumes = [elementsw_volume.test.id]
+  volumes = [solidfire_volume.test.id]
 }
 
-resource "elementsw_initiator" "test" {
+resource "solidfire_initiator" "test" {
   name = "tf-acc-test-initiator"
-  volume_access_group_id = elementsw_volume_access_group.test.id
+  volume_access_group_id = solidfire_volume_access_group.test.id
 }
 `
 
 const testAccFullCycleConfig_Step4 = testAccFullCycleConfig_Step3 + `
-resource "elementsw_schedule" "test" {
+resource "solidfire_schedule" "test" {
   schedule_name = "tf-acc-test-schedule"
   schedule_type = "Snapshot"
   attributes = {
@@ -135,31 +135,31 @@ resource "elementsw_schedule" "test" {
   }
   minutes = 60
   schedule_info = {
-    volumeID = elementsw_volume.test.id
+    volumeID = solidfire_volume.test.id
   }
 }
 `
 
 const testAccFullCycleConfig_Step5 = testAccFullCycleConfig_Step1 + `
-resource "elementsw_volume" "test" {
+resource "solidfire_volume" "test" {
   name = "tf-acc-test-volume"
-  account_id = elementsw_account.test.id
-  total_size = 2000000000 # Increased size
+  account_id = solidfire_account.test.id
+  total_size = 2000683008 # Increased size
   enable512e = true
-  qos_policy_id = elementsw_qos_policy.test.id
+  qos_policy_id = solidfire_qos_policy.test.id
 }
 
-resource "elementsw_volume_access_group" "test" {
+resource "solidfire_volume_access_group" "test" {
   name = "tf-acc-test-vag"
-  volumes = [elementsw_volume.test.id]
+  volumes = [solidfire_volume.test.id]
 }
 
-resource "elementsw_initiator" "test" {
+resource "solidfire_initiator" "test" {
   name = "tf-acc-test-initiator"
-  volume_access_group_id = elementsw_volume_access_group.test.id
+  volume_access_group_id = solidfire_volume_access_group.test.id
 }
 
-resource "elementsw_schedule" "test" {
+resource "solidfire_schedule" "test" {
   schedule_name = "tf-acc-test-schedule"
   schedule_type = "Snapshot"
   attributes = {
@@ -167,17 +167,17 @@ resource "elementsw_schedule" "test" {
   }
   minutes = 60
   schedule_info = {
-    volumeID = elementsw_volume.test.id
+    volumeID = solidfire_volume.test.id
   }
 }
 `
 
 const testAccFullCycleConfig_Step6 = `
-resource "elementsw_account" "test" {
-  username = "tf-acc-test-account"
+resource "solidfire_account" "test" {
+  username = "tf-acc-test-account-2"
 }
 
-resource "elementsw_qos_policy" "test" {
+resource "solidfire_qos_policy" "test" {
   name = "tf-acc-test-policy"
   qos {
     min_iops = 100 # Increased Min IOPS
@@ -187,25 +187,25 @@ resource "elementsw_qos_policy" "test" {
   }
 }
 
-resource "elementsw_volume" "test" {
+resource "solidfire_volume" "test" {
   name = "tf-acc-test-volume"
-  account_id = elementsw_account.test.id
-  total_size = 2000000000
+  account_id = solidfire_account.test.id
+  total_size = 2000683008
   enable512e = true
-  qos_policy_id = elementsw_qos_policy.test.id
+  qos_policy_id = solidfire_qos_policy.test.id
 }
 
-resource "elementsw_volume_access_group" "test" {
+resource "solidfire_volume_access_group" "test" {
   name = "tf-acc-test-vag"
-  volumes = [elementsw_volume.test.id]
+  volumes = [solidfire_volume.test.id]
 }
 
-resource "elementsw_initiator" "test" {
+resource "solidfire_initiator" "test" {
   name = "tf-acc-test-initiator"
-  volume_access_group_id = elementsw_volume_access_group.test.id
+  volume_access_group_id = solidfire_volume_access_group.test.id
 }
 
-resource "elementsw_schedule" "test" {
+resource "solidfire_schedule" "test" {
   schedule_name = "tf-acc-test-schedule"
   schedule_type = "Snapshot"
   attributes = {
@@ -213,7 +213,7 @@ resource "elementsw_schedule" "test" {
   }
   minutes = 60
   schedule_info = {
-    volumeID = elementsw_volume.test.id
+    volumeID = solidfire_volume.test.id
   }
 }
 `
