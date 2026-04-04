@@ -43,7 +43,7 @@ If you wish to contribute to the provider, you'll need [Go](https://golang.org/)
 
 1. Clone the repository.
 2. Run `make build` to compile the provider plugin.
-3. Set the required environment variables, including `TF_ACC=1` to enable Terraform Acceptance Tests, and `SOLIDFIRE_ACC=1` for provider-specific protections. 
+3. Set the required environment variables, including `TF_ACC=1` to enable Terraform Acceptance Tests, and `SOLIDFIRE_ACC=1` for provider-specific protections.
 4. Run `go test ./... -v -timeout 15m` to run acceptance tests against a live SolidFire cluster.
 
 ```sh

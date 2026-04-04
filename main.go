@@ -1,5 +1,7 @@
 package main
 
+//go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate --provider-name solidfire
+
 import (
 	"context"
 	"flag"
@@ -8,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6/tf6server"
 	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
-	"github.com/scaleoutsean/terraform-provider-solidfire/elementsw"
+	"github.com/scaleoutsean/terraform-provider-solidfire/solidfire"
 )
 
 func main() {
@@ -20,7 +22,7 @@ func main() {
 
 	upgradedProvider, err := tf5to6server.UpgradeServer(
 		ctx,
-		elementsw.Provider().GRPCProvider,
+		solidfire.Provider().GRPCProvider,
 	)
 	if err != nil {
 		log.Fatal(err)

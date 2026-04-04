@@ -4,22 +4,22 @@
 # It sets the necessary environment variables and then runs the tests using the `go test` command.
 
 # - TF_ACC
-# - ELEMENTSW_USERNAME
-# - ELEMENTSW_PASSWORD
-# - ELEMENTSW_SERVER
-# - ELEMENTSW_API_VERSION
+# - SOLIDFIRE_USERNAME
+# - SOLIDFIRE_PASSWORD
+# - SOLIDFIRE_SERVER
+# - SOLIDFIRE_API_VERSION
 # 
 export TF_ACC=1
-ELEMENTSW_USERNAME="${ELEMENTSW_USERNAME:-admin}"
-ELEMENTSW_PASSWORD="${ELEMENTSW_PASSWORD:-admin}"
-ELEMENTSW_SERVER="${ELEMENTSW_SERVER:-192.168.1.34}"
-ELEMENTSW_API_VERSION="${ELEMENTSW_API_VERSION:-12.5}"
+SOLIDFIRE_USERNAME="${SOLIDFIRE_USERNAME:-admin}"
+SOLIDFIRE_PASSWORD="${SOLIDFIRE_PASSWORD:-admin}"
+SOLIDFIRE_SERVER="${SOLIDFIRE_SERVER:-192.168.1.34}"
+SOLIDFIRE_API_VERSION="${SOLIDFIRE_API_VERSION:-12.5}"
 
 # Replication/Pairing variables
 REPLICATION=false
-ELEMENTSW_SERVER_DR="${ELEMENTSW_SERVER_DR:-}"
-ELEMENTSW_USERNAME_DR="${ELEMENTSW_USERNAME_DR:-$ELEMENTSW_USERNAME}"
-ELEMENTSW_PASSWORD_DR="${ELEMENTSW_PASSWORD_DR:-$ELEMENTSW_PASSWORD}"
+SOLIDFIRE_SERVER_DR="${SOLIDFIRE_SERVER_DR:-}"
+SOLIDFIRE_USERNAME_DR="${SOLIDFIRE_USERNAME_DR:-$SOLIDFIRE_USERNAME}"
+SOLIDFIRE_PASSWORD_DR="${SOLIDFIRE_PASSWORD_DR:-$SOLIDFIRE_PASSWORD}"
 
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
@@ -30,7 +30,7 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-for ENV_VAR in ELEMENTSW_USERNAME ELEMENTSW_PASSWORD ELEMENTSW_SERVER ELEMENTSW_API_VERSION; do
+for ENV_VAR in SOLIDFIRE_USERNAME SOLIDFIRE_PASSWORD SOLIDFIRE_SERVER SOLIDFIRE_API_VERSION; do
   if [ -z "${!ENV_VAR}" ]; then
     echo "Error: Environment variable $ENV_VAR is not set."
     exit 1
@@ -38,13 +38,13 @@ for ENV_VAR in ELEMENTSW_USERNAME ELEMENTSW_PASSWORD ELEMENTSW_SERVER ELEMENTSW_
 done
 
 if [ "$REPLICATION" = true ]; then
-    if [ -z "$ELEMENTSW_SERVER_DR" ]; then
-        echo "Error: --test-replication requires ELEMENTSW_SERVER_DR to be set."
+    if [ -z "$SOLIDFIRE_SERVER_DR" ]; then
+        echo "Error: --test-replication requires SOLIDFIRE_SERVER_DR to be set."
         exit 1
     fi
-    export ELEMENTSW_SERVER_DR
-    export ELEMENTSW_USERNAME_DR
-    export ELEMENTSW_PASSWORD_DR
+    export SOLIDFIRE_SERVER_DR
+    export SOLIDFIRE_USERNAME_DR
+    export SOLIDFIRE_PASSWORD_DR
 fi
 
 # Run tests from the project root
@@ -54,7 +54,7 @@ cd "$(dirname "$0")/.." || exit 1
 if [ "$REPLICATION" = true ]; then
     make testacc-pairing
 else
-    make testacc-account
+    make testacc
 fi
 
 

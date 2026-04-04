@@ -1,4 +1,4 @@
--include $(HOME)/.tf-elementsw-devrc.mk
+-include $(HOME)/.tf-solidfire-devrc.mk
 
 TEST?=$$(go list ./... |grep -v 'vendor')
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
@@ -17,19 +17,19 @@ testacc: fmtcheck
 	TF_ACC=1 SOLIDFIRE_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 15m
 
 testacc-qos-policy: fmtcheck
-	TF_ACC=1 SOLIDFIRE_ACC=1 go test ./elementsw -v -run TestAccElementswQoSPolicy
+	TF_ACC=1 SOLIDFIRE_ACC=1 go test ./solidfire -v -run TestAccElementswQoSPolicy
 
 testacc-volume: fmtcheck
-	TF_ACC=1 SOLIDFIRE_ACC=1 go test ./elementsw -v -run TestVolume
+	TF_ACC=1 SOLIDFIRE_ACC=1 go test ./solidfire -v -run TestVolume
 
 testacc-account: fmtcheck
-	TF_ACC=1 SOLIDFIRE_ACC=1 go test ./elementsw -v -run TestAccount_
+	TF_ACC=1 SOLIDFIRE_ACC=1 go test ./solidfire -v -run TestAccount_
 
 testacc-initiator: fmtcheck
-	TF_ACC=1 SOLIDFIRE_ACC=1 go test ./elementsw -v -run TestInitiator
+	TF_ACC=1 SOLIDFIRE_ACC=1 go test ./solidfire -v -run TestInitiator
 
 testacc-pairing: fmtcheck
-	TF_ACC=1 SOLIDFIRE_ACC=1 go test ./elementsw -v -run TestAccElementsw.*Pairing
+	TF_ACC=1 SOLIDFIRE_ACC=1 go test ./solidfire -v -run TestAccElementsw.*Pairing
 
 vet:
 	@echo "go vet ."
