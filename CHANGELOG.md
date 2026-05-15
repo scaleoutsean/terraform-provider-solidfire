@@ -1,8 +1,12 @@
 # CHANGELOG
 
-## v0.4.5 (2026/05/16)
+## v0.4.6 (2026/05/16)
 
 * Update golang.org/x/net@v0.53.0 (GO-2026-4918) and SolidFire Go SDK
+
+## v0.4.5 (2026/05/16)
+
+* Update documentation
 
 ## v0.4.4 (2026/04/05)
 
