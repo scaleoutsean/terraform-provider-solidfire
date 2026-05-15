@@ -1,6 +1,6 @@
 module github.com/scaleoutsean/terraform-provider-solidfire
 
-go 1.25.8
+go 1.26.3
 
 require (
 	github.com/hashicorp/terraform-plugin-docs v0.24.0
@@ -8,7 +8,7 @@ require (
 	github.com/hashicorp/terraform-plugin-mux v0.22.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.38.2
 	github.com/hashicorp/terraform-plugin-testing v1.14.0
-	github.com/scaleoutsean/solidfire-go v1.0.1
+	github.com/scaleoutsean/solidfire-go v1.0.5
 	github.com/sirupsen/logrus v1.9.4
 	github.com/stretchr/testify v1.10.0
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
@@ -82,7 +82,7 @@ require (
 	golang.org/x/mod v0.34.0 // indirect
 	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.42.0 // indirect
+	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/term v0.41.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
 	golang.org/x/tools v0.43.0 // indirect
