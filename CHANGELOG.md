@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v0.4.7 (2026/07/14)
+
+* Update Go to 1.26.5 (CVE), SolidFire Go SDK to 1.0.6 (due to Go CVE) and other deps
+
 ## v0.4.6 (2026/05/16)
 
 * Update golang.org/x/net@v0.53.0 (GO-2026-4918) and SolidFire Go SDK
