@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## v0.5.0 (2026/10/25)
+
+* Updates: Update direct dependency SolidFire Go v1.0.7 (updated to Go 1.27.3)
+
+## v0.4.9 (2026/10/25)
+
+* Updates: Go 1.27.3 and various other 3rd party dependencies
+
+## v0.4.8 (2026/10/25)
+
+* Update gRPC and indirect deps
+
 ## v0.4.7 (2026/07/14)
 
 * Update Go to 1.26.5 (CVE), SolidFire Go SDK to 1.0.6 (due to Go CVE) and other deps
