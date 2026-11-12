@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v0.5.1 (2026/11/12)
+
+* Updates: Update direct dependency SolidFire Go v1.0.8 (updated to Go 1.27.4)
+
 ## v0.5.0 (2026/10/25)
 
 * Updates: Update direct dependency SolidFire Go v1.0.7 (updated to Go 1.27.3)
